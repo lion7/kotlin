@@ -909,7 +909,8 @@ configure<IdeaModel> {
             ".gradle",
             "dependencies",
             "dist",
-            "tmp"
+            "tmp",
+            "intellij"
         ).toSet()
     }
 }
