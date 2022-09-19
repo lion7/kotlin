@@ -15,7 +15,6 @@ import org.jetbrains.kotlin.config.LanguageFeature.SynchronizedSuspendError
 import org.jetbrains.kotlin.diagnostics.*
 import org.jetbrains.kotlin.diagnostics.SourceElementPositioningStrategies
 import org.jetbrains.kotlin.diagnostics.rendering.RootDiagnosticRendererFactory
-import org.jetbrains.kotlin.fir.analysis.diagnostics.*
 import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.name.ClassId
@@ -45,6 +44,8 @@ object FirJvmErrors {
     val FUNCTION_DELEGATE_MEMBER_NAME_CLASH by error0<PsiElement>(SourceElementPositioningStrategies.DECLARATION_NAME)
     val VALUE_CLASS_WITHOUT_JVM_INLINE_ANNOTATION by error0<PsiElement>()
     val JVM_INLINE_WITHOUT_VALUE_CLASS by error0<PsiElement>()
+    val INAPPLICABLE_JVM_EXPOSE by error0<PsiElement>()
+    val CONFLICTING_JVM_NAME_AND_EXPOSE by error0<PsiElement>()
 
     // Types
     val JAVA_TYPE_MISMATCH by error2<KtExpression, ConeKotlinType, ConeKotlinType>()
