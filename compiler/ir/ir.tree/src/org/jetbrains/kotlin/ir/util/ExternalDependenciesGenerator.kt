@@ -37,7 +37,10 @@ class ExternalDependenciesGenerator(
             var unbound = setOf<IrSymbol>()
             do {
                 val prevUnbound = unbound
-                unbound = symbolTable.allUnbound
+                unbound = symbolTable.allUnbound //.toMutableSet()
+//                val unboundEx = symbolTable.allUnboundEx
+//                if (unboundEx.isNotEmpty())
+//                    println()
                 for (symbol in unbound) {
                     // Symbol could get bound as a side effect of deserializing other symbols.
                     if (!symbol.isBound) {
