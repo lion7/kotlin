@@ -5,10 +5,8 @@
 
 package org.jetbrains.kotlin.utils
 
-import com.apple.eawt.Application
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.ex.ApplicationUtil
 import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.ExceptionWithAttachments
 import java.nio.charset.StandardCharsets
@@ -64,9 +62,9 @@ inline fun checkWithAttachment(value: Boolean, lazyMessage: () -> String, attach
 }
 
 private fun PsiElement.getElementTextWithContext(): String {
-    if (!isValid) return "<invalid element $this>"
-
     return ApplicationManager.getApplication().runReadAction<String> {
+        if (!isValid) return@runReadAction kotlin.runCatching { "<invalid element $this>" }.getOrNull()
+            ?: "<invalid element ${this.javaClass.simpleName}>"
         if (this is PsiFile) {
             containingFile.text
         } else {
