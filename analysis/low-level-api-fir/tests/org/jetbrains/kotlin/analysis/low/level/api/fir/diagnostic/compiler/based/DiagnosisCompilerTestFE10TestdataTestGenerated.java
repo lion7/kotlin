@@ -802,6 +802,12 @@ public class DiagnosisCompilerTestFE10TestdataTestGenerated extends AbstractDiag
         }
 
         @Test
+        @TestMetadata("synteticSetInPureKotlin.kt")
+        public void testSynteticSetInPureKotlin() throws Exception {
+            runTest("compiler/testData/diagnostics/tests/synteticSetInPureKotlin.kt");
+        }
+
+        @Test
         @TestMetadata("syntheticSet.kt")
         public void testSyntheticSet() throws Exception {
             runTest("compiler/testData/diagnostics/tests/syntheticSet.kt");

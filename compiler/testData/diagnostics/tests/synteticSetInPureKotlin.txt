@@ -1,0 +1,18 @@
+package
+
+public fun inn(/*0*/ container: Container<in kotlin.String>, /*1*/ wrapper: Wrapper<kotlin.Any>): kotlin.Unit
+
+public final class Container</*0*/ E> {
+    public constructor Container</*0*/ E>()
+    public final var w: Wrapper<E>?
+    public open override /*1*/ /*fake_override*/ fun equals(/*0*/ other: kotlin.Any?): kotlin.Boolean
+    public open override /*1*/ /*fake_override*/ fun hashCode(): kotlin.Int
+    public open override /*1*/ /*fake_override*/ fun toString(): kotlin.String
+}
+
+public final class Wrapper</*0*/ W> {
+    public constructor Wrapper</*0*/ W>()
+    public open override /*1*/ /*fake_override*/ fun equals(/*0*/ other: kotlin.Any?): kotlin.Boolean
+    public open override /*1*/ /*fake_override*/ fun hashCode(): kotlin.Int
+    public open override /*1*/ /*fake_override*/ fun toString(): kotlin.String
+}

@@ -38,7 +38,9 @@ object JvmSyntheticAssignmentChecker : CallChecker {
         for (argument in receiverType.arguments) {
             val argumentType = argument.type
             if (argumentType is NewCapturedType) {
-                if (argumentType.constructor.projection.getVariance() == TypeVariance.IN) continue
+                if (argumentType.constructor.projection.getVariance() == TypeVariance.IN) {
+                    continue
+                }
                 val typeParameter = argumentType.constructor.typeParameter ?: continue
                 if (typeParameter !in containingClassDescriptor.declaredTypeParameters) continue
                 if (propertyType.contains {
