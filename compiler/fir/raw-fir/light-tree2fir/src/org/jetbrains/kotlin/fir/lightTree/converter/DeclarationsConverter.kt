@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2022 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -12,7 +12,6 @@ import org.jetbrains.kotlin.*
 import org.jetbrains.kotlin.ElementTypeUtils.isExpression
 import org.jetbrains.kotlin.KtNodeTypes.*
 import org.jetbrains.kotlin.builtins.StandardNames
-import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibilities
@@ -1185,7 +1184,8 @@ class DeclarationsConverter(
                 )
             } else {
                 this.isLocal = false
-                receiverTypeRef = receiverType
+                receiverParameter = receiverType?.convertToReceiverParameter()
+
                 dispatchReceiverType = currentDispatchReceiverType()
                 withCapturedTypeParameters(true, propertySource, firTypeParameters) {
                     typeParameters += firTypeParameters
@@ -1612,7 +1612,7 @@ class DeclarationsConverter(
             functionSymbol = FirAnonymousFunctionSymbol()
             FirAnonymousFunctionBuilder().apply {
                 source = functionSource
-                receiverTypeRef = receiverType
+                receiverParameter = receiverType?.convertToReceiverParameter()
                 symbol = functionSymbol
                 isLambda = false
                 hasExplicitParameterList = true
@@ -1627,7 +1627,7 @@ class DeclarationsConverter(
             functionSymbol = FirNamedFunctionSymbol(callableIdForName(functionName))
             FirSimpleFunctionBuilder().apply {
                 source = functionSource
-                receiverTypeRef = receiverType
+                receiverParameter = receiverType?.convertToReceiverParameter()
                 name = functionName
                 status = FirDeclarationStatusImpl(
                     if (isLocal) Visibilities.Local else modifiers.getVisibility(),

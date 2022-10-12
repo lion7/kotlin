@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2022 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -9,7 +9,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.IElementType
 import org.jetbrains.kotlin.*
 import org.jetbrains.kotlin.builtins.StandardNames.BACKING_FIELD
-import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibilities
@@ -597,7 +596,6 @@ open class RawFirBuilder(
                 moduleData = baseModuleData
                 origin = FirDeclarationOrigin.Source
                 returnTypeRef = type.copyWithNewSourceKind(KtFakeSourceElementKind.PropertyFromParameter)
-                receiverTypeRef = null
                 name = propertyName
                 initializer = buildPropertyAccessExpression {
                     source = propertySource
@@ -1303,7 +1301,7 @@ open class RawFirBuilder(
             val isAnonymousFunction = function.name == null && !function.parent.let { it is KtFile || it is KtClassBody }
             val functionBuilder = if (isAnonymousFunction) {
                 FirAnonymousFunctionBuilder().apply {
-                    receiverTypeRef = receiverType
+                    receiverParameter = receiverType?.convertToReceiverParameter()
                     symbol = FirAnonymousFunctionSymbol()
                     isLambda = false
                     hasExplicitParameterList = true
@@ -1312,7 +1310,7 @@ open class RawFirBuilder(
                 }
             } else {
                 FirSimpleFunctionBuilder().apply {
-                    receiverTypeRef = receiverType
+                    receiverParameter = receiverType?.convertToReceiverParameter()
                     name = function.nameAsSafeName
                     labelName = runIf(!name.isSpecial) { name.identifier }
                     symbol = FirNamedFunctionSymbol(callableIdForName(function.nameAsSafeName))
@@ -1421,7 +1419,7 @@ open class RawFirBuilder(
                 moduleData = baseModuleData
                 origin = FirDeclarationOrigin.Source
                 returnTypeRef = returnType
-                receiverTypeRef = receiverType
+                receiverParameter = receiverType.asReceiverParameter()
                 symbol = FirAnonymousFunctionSymbol()
                 isLambda = true
                 hasExplicitParameterList = expression.functionLiteral.arrow != null
@@ -1644,7 +1642,7 @@ open class RawFirBuilder(
                     }
                 } else {
                     isLocal = false
-                    receiverTypeRef = receiverTypeReference.convertSafe()
+                    receiverParameter = receiverTypeReference.convertSafe<FirTypeRef>()?.convertToReceiverParameter()
                     symbol = FirPropertySymbol(callableIdForName(propertyName))
                     dispatchReceiverType = currentDispatchReceiverType()
                     extractTypeParametersTo(this, symbol)
@@ -2025,7 +2023,6 @@ open class RawFirBuilder(
                         moduleData = baseModuleData
                         origin = FirDeclarationOrigin.Source
                         returnTypeRef = ktSubjectExpression.typeReference.toFirOrImplicitType()
-                        receiverTypeRef = null
                         this.name = name
                         initializer = subjectExpression
                         delegate = null

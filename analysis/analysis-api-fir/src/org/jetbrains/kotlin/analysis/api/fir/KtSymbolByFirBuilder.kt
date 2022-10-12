@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2022 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -25,6 +25,7 @@ import org.jetbrains.kotlin.analysis.low.level.api.fir.util.withConeTypeEntry
 import org.jetbrains.kotlin.analysis.low.level.api.fir.util.withFirEntry
 import org.jetbrains.kotlin.analysis.low.level.api.fir.util.withFirSymbolEntry
 import org.jetbrains.kotlin.analysis.providers.createPackageProvider
+import org.jetbrains.kotlin.analysis.utils.errors.buildErrorWithAttachment
 import org.jetbrains.kotlin.builtins.functions.FunctionClassKind
 import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.declarations.*
@@ -45,15 +46,14 @@ import org.jetbrains.kotlin.fir.scopes.impl.toConeType
 import org.jetbrains.kotlin.fir.symbols.ConeClassLikeLookupTag
 import org.jetbrains.kotlin.fir.symbols.ConeTypeParameterLookupTag
 import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
-import org.jetbrains.kotlin.fir.symbols.lazyResolveToPhase
 import org.jetbrains.kotlin.fir.symbols.impl.*
+import org.jetbrains.kotlin.fir.symbols.lazyResolveToPhase
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.fir.types.impl.ConeClassLikeTypeImpl
 import org.jetbrains.kotlin.fir.visitors.FirVisitorVoid
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.types.Variance
-import org.jetbrains.kotlin.analysis.utils.errors.buildErrorWithAttachment
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
@@ -425,7 +425,7 @@ internal class KtSymbolByFirBuilder constructor(
         }
 
         fun buildExtensionReceiverSymbol(firCallableSymbol: FirCallableSymbol<*>): KtReceiverParameterSymbol? {
-            if (firCallableSymbol.fir.receiverTypeRef == null) return null
+            if (firCallableSymbol.fir.receiverParameter == null) return null
             return extensionReceiverSymbolsCache.cache(firCallableSymbol) {
                 KtFirReceiverParameterSymbol(firCallableSymbol, firResolveSession, token, this@KtSymbolByFirBuilder)
             }
@@ -653,7 +653,7 @@ private fun collectReferencedTypeParameters(declaration: FirCallableDeclaration)
         override fun visitSimpleFunction(simpleFunction: FirSimpleFunction) {
             simpleFunction.typeParameters.forEach { it.accept(this) }
 
-            simpleFunction.receiverTypeRef?.accept(this)
+            simpleFunction.receiverParameter?.accept(this)
             simpleFunction.valueParameters.forEach { it.returnTypeRef.accept(this) }
             simpleFunction.returnTypeRef.accept(this)
         }
@@ -661,8 +661,12 @@ private fun collectReferencedTypeParameters(declaration: FirCallableDeclaration)
         override fun visitProperty(property: FirProperty) {
             property.typeParameters.forEach { it.accept(this) }
 
-            property.receiverTypeRef?.accept(this)
+            property.receiverParameter?.accept(this)
             property.returnTypeRef.accept(this)
+        }
+
+        override fun visitReceiverParameter(receiverParameter: FirReceiverParameter) {
+            receiverParameter.type.accept(this)
         }
 
         override fun visitResolvedTypeRef(resolvedTypeRef: FirResolvedTypeRef) {

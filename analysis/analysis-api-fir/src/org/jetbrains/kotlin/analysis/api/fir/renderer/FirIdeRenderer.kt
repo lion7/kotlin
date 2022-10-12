@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2022 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -9,7 +9,6 @@ import org.jetbrains.kotlin.KtFakeSourceElementKind
 import org.jetbrains.kotlin.analysis.api.components.KtDeclarationRendererOptions
 import org.jetbrains.kotlin.analysis.utils.printer.PrettyPrinter
 import org.jetbrains.kotlin.analysis.utils.printer.prettyPrint
-import org.jetbrains.kotlin.builtins.StandardNames
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.fir.FirSession
@@ -239,14 +238,12 @@ internal class FirIdeRenderer private constructor(
     }
 
     private fun PrettyPrinter.renderReceiver(firCallableDeclaration: FirCallableDeclaration) {
-        val receiverType = firCallableDeclaration.receiverTypeRef
+        val receiverParameter = firCallableDeclaration.receiverParameter
+        val receiverType = receiverParameter?.type
         if (receiverType != null) {
-            if (options.renderDeclarationHeader) {
-                renderAnnotations(firCallableDeclaration)
-            }
-
             val needBrackets =
-                typeIdeRenderer.shouldRenderAsPrettyFunctionType(receiverType.coneType) && receiverType.isMarkedNullable == true
+                typeIdeRenderer.shouldRenderAsPrettyFunctionType(receiverType.coneType) &&
+                        receiverType.isMarkedNullable == true
 
             if (needBrackets) append('(')
             renderType(receiverType)

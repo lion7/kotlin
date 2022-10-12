@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2022 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.analysis.utils.printer.PrettyPrinter
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibilities
+import org.jetbrains.kotlin.fir.FirAnnotationContainer
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.analysis.checkers.classKind
 import org.jetbrains.kotlin.fir.analysis.checkers.getContainingClassSymbol
@@ -33,9 +34,10 @@ internal abstract class FirIdeRendererBase(
 ) {
     protected val typeIdeRenderer: ConeTypeIdeRenderer = ConeTypeIdeRenderer(useSiteSession, options.typeRendererOptions)
 
-    protected fun PrettyPrinter.renderAnnotations(declaration: FirDeclaration) {
+    protected fun PrettyPrinter.renderAnnotations(declaration: FirAnnotationContainer) {
         if (RendererModifier.ANNOTATIONS in options.modifiers) {
-            val isSingleLineAnnotations = declaration is FirValueParameter || declaration is FirTypeParameter
+            val isSingleLineAnnotations =
+                declaration is FirValueParameter || declaration is FirTypeParameter || declaration is FirReceiverParameter
             renderAnnotations(typeIdeRenderer, declaration.annotations, useSiteSession, isSingleLineAnnotations)
         }
     }
