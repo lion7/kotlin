@@ -109,6 +109,10 @@ class FakeCallResolver(
                 context.trace.report(diagnostic)
             }
         }
+
+        override fun abstractSuperCallWarning(trace: BindingTrace) {
+            super.abstractSuperCallWarning(trace)
+        }
     }
 
     private class TracingStrategyForIteratorCall(
@@ -130,6 +134,10 @@ class FakeCallResolver(
             if (diagnostic != null) {
                 context.trace.report(diagnostic)
             }
+        }
+
+        override fun abstractSuperCallWarning(trace: BindingTrace) {
+            super.abstractSuperCallWarning(trace)
         }
     }
 

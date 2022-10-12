@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.fir.analysis.cfa.util
 
 import kotlinx.collections.immutable.PersistentMap
+import java.util.function.BiConsumer
 
 abstract class ControlFlowInfo<S : ControlFlowInfo<S, K, V>, K : Any, V : Any> protected constructor(
     protected val map: PersistentMap<K, V>,
@@ -36,4 +37,12 @@ abstract class ControlFlowInfo<S : ControlFlowInfo<S, K, V>, K : Any, V : Any> p
     }
 
     abstract fun merge(other: S): S
+
+    override fun forEach(action: BiConsumer<in K, in V>) {
+        super.forEach(action)
+    }
+
+    override fun getOrDefault(key: K, defaultValue: V): V {
+        return super.getOrDefault(key, defaultValue)
+    }
 }

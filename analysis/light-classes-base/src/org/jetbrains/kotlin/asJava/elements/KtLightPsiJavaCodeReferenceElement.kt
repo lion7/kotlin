@@ -5,6 +5,9 @@
 
 package org.jetbrains.kotlin.asJava.elements
 
+import com.intellij.model.Symbol
+import com.intellij.model.SymbolResolveResult
+import com.intellij.model.psi.PsiSymbolReference
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.*
 import com.intellij.psi.scope.PsiScopeProcessor
@@ -39,6 +42,30 @@ class KtLightPsiJavaCodeReferenceElement(
     override fun getQualifier(): PsiElement? = null
 
     override fun getParameterList(): PsiReferenceParameterList? = null
+
+    override fun getTextRangeInParent(): TextRange {
+        return super<PsiElement>.getTextRangeInParent()
+    }
+
+    override fun getOwnReferences(): MutableIterable<PsiSymbolReference> {
+        return super<PsiElement>.getOwnReferences()
+    }
+
+    override fun resolveReference(): MutableCollection<out SymbolResolveResult> {
+        return super<PsiJavaCodeReferenceElement>.resolveReference()
+    }
+
+    override fun resolvesTo(target: Symbol): Boolean {
+        return super<PsiReference>.resolvesTo(target)
+    }
+
+    override fun getVariants(): Array<Any> {
+        return super<PsiReference>.getVariants()
+    }
+
+    override fun getAbsoluteRange(): TextRange {
+        return super<PsiReference>.getAbsoluteRange()
+    }
 }
 
 private class LazyPsiReferenceDelegate(

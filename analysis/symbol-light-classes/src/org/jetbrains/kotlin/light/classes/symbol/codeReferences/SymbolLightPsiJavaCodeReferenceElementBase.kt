@@ -5,6 +5,10 @@
 
 package org.jetbrains.kotlin.light.classes.symbol.codeReferences
 
+import com.intellij.model.Symbol
+import com.intellij.model.SymbolResolveResult
+import com.intellij.model.psi.PsiSymbolReference
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.*
 import com.intellij.psi.scope.PsiScopeProcessor
 
@@ -32,4 +36,32 @@ internal abstract class SymbolLightPsiJavaCodeReferenceElementBase(private val k
     override fun isQualified(): Boolean = false
 
     override fun getQualifiedName(): String? = null
+
+    override fun equals(other: Any?): Boolean {
+        return super.equals(other)
+    }
+
+    override fun resolveReference(): MutableCollection<out SymbolResolveResult> {
+        return super.resolveReference()
+    }
+
+    override fun resolvesTo(target: Symbol): Boolean {
+        return super.resolvesTo(target)
+    }
+
+    override fun getAbsoluteRange(): TextRange {
+        return super.getAbsoluteRange()
+    }
+
+    override fun getVariants(): Array<Any> {
+        return super.getVariants()
+    }
+
+    override fun getTextRangeInParent(): TextRange {
+        return super<PsiJavaCodeReferenceElement>.getTextRangeInParent()
+    }
+
+    override fun getOwnReferences(): MutableIterable<PsiSymbolReference> {
+        return super<PsiJavaCodeReferenceElement>.getOwnReferences()
+    }
 }

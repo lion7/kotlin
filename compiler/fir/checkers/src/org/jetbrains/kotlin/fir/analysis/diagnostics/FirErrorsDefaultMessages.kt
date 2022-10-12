@@ -354,6 +354,7 @@ import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.NO_EXPLICIT_RETUR
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.NO_EXPLICIT_VISIBILITY_IN_API_MODE
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.NO_EXPLICIT_VISIBILITY_IN_API_MODE_WARNING
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.NO_GET_METHOD
+import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.NO_OVERRIDE_FOR_DELEGATE_WITH_DEFAULT_METHOD
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.NO_RECEIVER_ALLOWED
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.NO_RETURN_IN_FUNCTION_WITH_BLOCK_BODY
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.NO_SET_METHOD
@@ -1357,6 +1358,10 @@ object FirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(NON_FINAL_MEMBER_IN_OBJECT, "'open' has no effect in an object")
         map.put(
             VIRTUAL_MEMBER_HIDDEN, "''{0}'' hides member of supertype ''{1}'' and needs ''override'' modifier", DECLARATION_NAME,
+            DECLARATION_NAME
+        )
+        map.put(
+            NO_OVERRIDE_FOR_DELEGATE_WITH_DEFAULT_METHOD, "The default Java interface method ''{0}'' should be overridden",
             DECLARATION_NAME
         )
         map.put(
