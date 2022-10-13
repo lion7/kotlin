@@ -19,6 +19,7 @@ package org.jetbrains.kotlin.psi2ir.generators
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.impl.LocalVariableDescriptor
 import org.jetbrains.kotlin.descriptors.impl.SyntheticFieldDescriptor
+import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin.IR_EXTERNAL_JAVA_DECLARATION_STUB
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.*
@@ -38,6 +39,7 @@ import org.jetbrains.kotlin.resolve.calls.tasks.isDynamic
 import org.jetbrains.kotlin.resolve.calls.util.FakeCallableDescriptorForObject
 import org.jetbrains.kotlin.resolve.descriptorUtil.classValueType
 import org.jetbrains.kotlin.resolve.descriptorUtil.getSuperClassNotAny
+import org.jetbrains.kotlin.resolve.scopes.receivers.ReceiverValue
 import org.jetbrains.kotlin.types.KotlinType
 
 class CallGenerator(statementGenerator: StatementGenerator) : StatementGeneratorExtension(statementGenerator) {
@@ -195,10 +197,26 @@ class CallGenerator(statementGenerator: StatementGenerator) : StatementGenerator
         }
     }
 
-    private fun PropertyDescriptor.containingClassForField(): ClassDescriptor? {
+    private fun PropertyDescriptor.containingClassForField(receiverValue: ReceiverValue?): ClassDescriptor? {
         val ownContainingClass = containingDeclaration as? ClassDescriptor ?: return null
         // For static field, we shouldn't unwrap fake override in any case
         if (dispatchReceiverParameter == null) return ownContainingClass
+        // If we have visible alternative property, we leave everything as is (see KT-54393)
+        ownContainingClass.unsubstitutedMemberScope.getContributedVariables(
+            name, NoLookupLocation.FROM_BACKEND
+        ).forEach { alternativeProperty ->
+            if (alternativeProperty !== this) {
+                if (DescriptorVisibilities.isVisible(
+                        /* receiver = */ receiverValue,
+                        /* what = */ alternativeProperty,
+                        /* from = */ scope.scopeOwnerSymbol.descriptor,
+                        /* useSpecialRulesForPrivateSealedConstructors = */ true
+                    )
+                ) {
+                    return ownContainingClass
+                }
+            }
+        }
         val originalContainingClass = resolveFakeOverride().containingDeclaration as? ClassDescriptor ?: return ownContainingClass
         // Find first Java super class to avoid possible visibility exposure & separate compilation problems
         var containingClassForField = ownContainingClass
@@ -221,7 +239,7 @@ class CallGenerator(statementGenerator: StatementGenerator) : StatementGenerator
 
         return if (getMethodDescriptor == null) {
             val superQualifierSymbol =
-                (call.superQualifier ?: descriptor.containingClassForField())?.let {
+                (call.superQualifier ?: descriptor.containingClassForField(call.original.dispatchReceiver))?.let {
                     if (it is ScriptDescriptor) null // otherwise it creates a reference to script as class; TODO: check if correct
                     else context.symbolTable.referenceClass(it)
                 }
