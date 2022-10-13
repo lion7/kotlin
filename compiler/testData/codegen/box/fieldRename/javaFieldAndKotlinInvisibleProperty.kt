@@ -1,6 +1,4 @@
 // TARGET_BACKEND: JVM_IR
-// IGNORE_BACKEND: JVM_IR
-// DUMP_IR
 
 // FILE: BaseJava.java
 public class BaseJava {
@@ -9,7 +7,7 @@ public class BaseJava {
 
 // FILE: Derived.kt
 class Derived : BaseJava() {
-    val a = "FAIL"
+    private val a = "FAIL"
 }
 
 fun box() = Derived().a
