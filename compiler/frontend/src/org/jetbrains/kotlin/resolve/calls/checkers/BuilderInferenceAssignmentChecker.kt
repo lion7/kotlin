@@ -48,7 +48,7 @@ object BuilderInferenceAssignmentChecker : CallChecker {
                     KotlinTypeChecker.DEFAULT.isSubtypeOf(it, leftType)
                 }
             ) {
-                context.trace.report(Errors.TYPE_MISMATCH.on(right, leftType, rightType))
+                context.trace.report(Errors.TYPE_MISMATCH_IN_BUILDER_INFERENCE_ASSIGNMENT.on(right, leftType, rightType))
             }
         }
     }
