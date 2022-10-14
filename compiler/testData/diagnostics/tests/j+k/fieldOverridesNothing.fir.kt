@@ -13,9 +13,9 @@ interface A {
 }
 
 class C : B() {
-    <!DERIVED_CLASS_PROPERTY_SHADOWS_BASE_CLASS_FIELD!>override val size: Int get() = 1<!>
+    override val size: Int get() = 1
 }
 
 fun foo() {
-    C().<!BASE_CLASS_FIELD_SHADOWS_DERIVED_CLASS_PROPERTY!>size<!>
+    C().size
 }
