@@ -105,6 +105,7 @@ public class DefaultErrorMessages {
         MAP.put(ACCESSOR_PARAMETER_NAME_SHADOWING, "Accessor parameter name 'field' is shadowed by backing field variable");
 
         MAP.put(TYPE_MISMATCH, "Type mismatch: inferred type is {1} but {0} was expected", RENDER_TYPE, RENDER_TYPE);
+        MAP.put(TYPE_MISMATCH_IN_BUILDER_INFERENCE_ASSIGNMENT, "Type mismatch in builder inference assignment: inferred type is {1} but {0} was expected", RENDER_TYPE, RENDER_TYPE);
         MAP.put(TYPE_MISMATCH_WARNING, "Type mismatch: inferred type is {1} but {0} was expected", RENDER_TYPE, RENDER_TYPE);
         MAP.put(TYPE_MISMATCH_DUE_TO_EQUALS_LAMBDA_IN_FUN,
                 "Inferred type is a function type, but a non-function type {0} was expected. Use either ''= ...'' or '''{ ... }'', but not both.",

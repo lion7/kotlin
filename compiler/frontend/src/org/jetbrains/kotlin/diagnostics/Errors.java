@@ -1203,6 +1203,7 @@ public interface Errors {
     // Type mismatch
 
     DiagnosticFactory2<KtExpression, KotlinType, KotlinType> TYPE_MISMATCH = DiagnosticFactory2.create(ERROR);
+    DiagnosticFactory2<KtExpression, KotlinType, KotlinType> TYPE_MISMATCH_IN_BUILDER_INFERENCE_ASSIGNMENT = DiagnosticFactory2.create(ERROR);
     DiagnosticFactory2<KtExpression, KotlinType, KotlinType> TYPE_MISMATCH_WARNING = DiagnosticFactory2.create(WARNING);
     DiagnosticFactory1<KtElement, KotlinType> TYPE_MISMATCH_DUE_TO_EQUALS_LAMBDA_IN_FUN = DiagnosticFactory1.create(ERROR);
     DiagnosticFactory1<KtElement, TypeMismatchDueToTypeProjectionsData> TYPE_MISMATCH_DUE_TO_TYPE_PROJECTIONS =
