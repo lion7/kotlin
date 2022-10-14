@@ -210,6 +210,9 @@ public interface ErrorsJvm {
     DiagnosticFactoryForDeprecation0<PsiElement> ENUM_DECLARING_CLASS_DEPRECATED =
             DiagnosticFactoryForDeprecation0.create(LanguageFeature.ProhibitEnumDeclaringClass);
 
+    DiagnosticFactory2<PsiElement, String, String> DERIVED_CLASS_PROPERTY_SHADOWS_BASE_CLASS_FIELD = DiagnosticFactory2.create(ERROR);
+
+
     @SuppressWarnings("UnusedDeclaration")
     Object _initializer = new Object() {
         {
