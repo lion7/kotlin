@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.resolve.jvm.checkers
 import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
+import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.load.java.lazy.descriptors.isJavaField
@@ -39,13 +40,21 @@ object JvmPropertyVsFieldAmbiguityChecker : DeclarationChecker {
                 val fieldClassDescriptor = field.containingDeclaration as? ClassDescriptor
                 if (fieldClassDescriptor === descriptor) return@forEach
 
-                context.trace.report(
-                    ErrorsJvm.DERIVED_CLASS_PROPERTY_SHADOWS_BASE_CLASS_FIELD.on(
-                        property,
-                        if (hasLateInit) "with lateinit" else "with custom getter",
-                        fieldClassDescriptor?.fqNameSafe?.asString() ?: "unknown class"
+                if (DescriptorVisibilities.isVisible(
+                        /* receiver = */ null,
+                        /* what = */ mayBeField,
+                        /* from = */ descriptor,
+                        /* useSpecialRulesForPrivateSealedConstructors = */ true
                     )
-                )
+                ) {
+                    context.trace.report(
+                        ErrorsJvm.DERIVED_CLASS_PROPERTY_SHADOWS_BASE_CLASS_FIELD.on(
+                            property,
+                            if (hasLateInit) "with lateinit" else "with custom getter",
+                            fieldClassDescriptor?.fqNameSafe?.asString() ?: "unknown class"
+                        )
+                    )
+                }
             }
         }
     }
