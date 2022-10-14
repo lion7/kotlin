@@ -31,7 +31,7 @@ class MemoryUsage(
  * This class represents statistics of the root set for garbage collector run, separated by root set pools.
  * These nodes are assumed to be used, even if there are no references for them.
  *
- * @property threadLocalReferences The number of objects in global variables with @ThreadLocal annotation.
+ * @property threadLocalReferences The number of objects in global variables with `@ThreadLocal` annotation.
  *                                 Object is counted for each thread it was initialized.
  * @property stackReferences The number of objects referenced from the stack of any thread.
  *                           These are function local variables and different temporary values, as function call arguments and
