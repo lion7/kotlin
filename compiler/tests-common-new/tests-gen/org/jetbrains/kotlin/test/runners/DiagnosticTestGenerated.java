@@ -33503,6 +33503,12 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
             }
 
             @Test
+            @TestMetadata("inefficientEqualsOverridingInMfvc.kt")
+            public void testInefficientEqualsOverridingInMfvc() throws Exception {
+                runTest("compiler/testData/diagnostics/tests/valueClasses/inefficientEqualsOverridingInMfvc.kt");
+            }
+
+            @Test
             @TestMetadata("jvmInlineApplicability.kt")
             public void testJvmInlineApplicability() throws Exception {
                 runTest("compiler/testData/diagnostics/tests/valueClasses/jvmInlineApplicability.kt");
@@ -33545,9 +33551,15 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
             }
 
             @Test
-            @TestMetadata("reservedMembersAndConstructsInsideValueClass.kt")
-            public void testReservedMembersAndConstructsInsideValueClass() throws Exception {
-                runTest("compiler/testData/diagnostics/tests/valueClasses/reservedMembersAndConstructsInsideValueClass.kt");
+            @TestMetadata("reservedMembersAndConstructsInsideMfvc.kt")
+            public void testReservedMembersAndConstructsInsideMfvc() throws Exception {
+                runTest("compiler/testData/diagnostics/tests/valueClasses/reservedMembersAndConstructsInsideMfvc.kt");
+            }
+
+            @Test
+            @TestMetadata("typedEqualsOperatorModifierInMfvc.kt")
+            public void testTypedEqualsOperatorModifierInMfvc() throws Exception {
+                runTest("compiler/testData/diagnostics/tests/valueClasses/typedEqualsOperatorModifierInMfvc.kt");
             }
 
             @Test
