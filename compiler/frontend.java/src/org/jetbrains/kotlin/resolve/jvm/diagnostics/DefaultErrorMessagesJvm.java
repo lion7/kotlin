@@ -234,6 +234,7 @@ public class DefaultErrorMessagesJvm implements DefaultErrorMessages.Extension {
         MAP.put(ENUM_DECLARING_CLASS_DEPRECATED, "Enum.declaringClass is deprecated, use declaringJavaClass instead or cast receiver to java.lang.Enum explicitly");
 
         MAP.put(DERIVED_CLASS_PROPERTY_SHADOWS_BASE_CLASS_FIELD, "Property with {0} shadows the field from base class {1}", STRING, STRING);
+        MAP.put(BASE_CLASS_FIELD_SHADOWS_DERIVED_CLASS_PROPERTY, "Field from base class {0} shadows the property with {1}", STRING, STRING);
     }
 
     @NotNull

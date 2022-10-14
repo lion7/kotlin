@@ -17,3 +17,9 @@ class Derived : Base() {
 
     <!DERIVED_CLASS_PROPERTY_SHADOWS_BASE_CLASS_FIELD("with lateinit; Base")!>lateinit var c: String<!>
 }
+
+fun test(d: Derived) {
+    d.a
+    d.<!BASE_CLASS_FIELD_SHADOWS_DERIVED_CLASS_PROPERTY!>b<!>
+    d.<!BASE_CLASS_FIELD_SHADOWS_DERIVED_CLASS_PROPERTY!>c<!>
+}

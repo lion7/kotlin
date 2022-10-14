@@ -26,7 +26,7 @@ object JvmPropertyVsFieldAmbiguityChecker : DeclarationChecker {
         for (property in declaration.declarations) {
             if (property !is KtProperty) continue
             val hasLateInit = property.hasModifier(KtTokens.LATEINIT_KEYWORD)
-            if (!hasLateInit && property.getter == null) continue
+            if (!hasLateInit && property.getter?.hasBody() != true) continue
 
             descriptor.unsubstitutedMemberScope.getContributedVariables(
                 property.nameAsSafeName, NoLookupLocation.FROM_TEST

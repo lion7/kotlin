@@ -17,3 +17,9 @@ class Derived : Base() {
 
     lateinit var c: String
 }
+
+fun test(d: Derived) {
+    d.a
+    d.b
+    d.c
+}
