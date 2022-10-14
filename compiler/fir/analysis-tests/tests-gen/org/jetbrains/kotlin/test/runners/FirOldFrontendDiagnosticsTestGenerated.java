@@ -5615,6 +5615,12 @@ public class FirOldFrontendDiagnosticsTestGenerated extends AbstractFirDiagnosti
             }
 
             @Test
+            @TestMetadata("inlinedBreakContinueFeatureDisabled.kt")
+            public void testInlinedBreakContinueFeatureDisabled() throws Exception {
+                runTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/inlinedBreakContinueFeatureDisabled.kt");
+            }
+
+            @Test
             @TestMetadata("kt1001.kt")
             public void testKt1001() throws Exception {
                 runTest("compiler/testData/diagnostics/tests/controlFlowAnalysis/kt1001.kt");
