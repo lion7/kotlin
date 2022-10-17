@@ -22,7 +22,7 @@ import kotlin.system.*
  *                                 All alignment and auxiliary object headers are included.
  */
 @ExperimentalStdlibApi
-class MemoryUsage(
+public class MemoryUsage(
         val objectsCount: Long,
         val totalObjectsSizeBytes: Long,
 )
@@ -42,7 +42,7 @@ class MemoryUsage(
  *                            of this API, and internal usages, e.g. inside interop and Worker API.
  */
 @ExperimentalStdlibApi
-class RootSetStatistics(
+public class RootSetStatistics(
         val threadLocalReferences: Long,
         val stackReferences: Long,
         val globalReferences: Long,
@@ -52,22 +52,15 @@ class RootSetStatistics(
 /**
  * This class represents statistics about the single run of the garbage collector.
  * It is supposed to be used for testing and debugging purposes only.
- * Not all values can be available for all garbage collector implementations.
  *
  * @property epoch ID of garbage collector run.
  * @property startTimeNs Time, when garbage collector run is started, meausered by [kotlin.system.getTimeNanos].
  * @property endTimeNs Time, when garbage collector run is ended, measured by [kotlin.system.getTimeNanos].
  *                     After this point, most of the memory is reclaimed, and a new garbage collector run can start.
- * @property duration Difference between [endTimeNs] and [startTimeNs]. This is the best estimation of how long was this garbage collector run was.
  * @property pauseStartTimeNs Time, when mutator threads are suspended, mesured by [kotlin.system.getTimeNanos].
  * @property pauseEndTimeNs Time, when mutator threads are unsuspended, mesured by [kotlin.system.getTimeNanos].
- * @property pauseDuration Difference between [pauseEndTimeNs] and [pauseStartTimeNs]. This is the best estimation of how long no application
- *           operations can happen because of the garbage collector run.
  * @property finilisersDoneTimeNs Time, when all memory is reclaimed, measured by [kotlin.system.getTimeNanos].
  *                                If null, memory reclaiming is still in progress.
- * @property durationWithFinalizers Difference between [finilisersDoneTimeNs] and [startTimeNs].
- *                                  This is the best estimation of how long memory can still be not reclaimed after
- *                                  the garbage collector starts.
  * @property rootSet The number of objects in each root set pool. Check [RootSetStatistics] doc for details.
  * @property memoryUsageAfter Memory usage at the start of garbage collector run, separated by memory pools.
  *                            The set of memory pools depends on the collector implementation.
@@ -77,29 +70,20 @@ class RootSetStatistics(
  *                            Can be empty, of colelction is in progress.
  */
 @ExperimentalStdlibApi
-class GCInfo(
+public class GCInfo(
         val epoch: Long,
         val startTimeNs: Long,
-        val endTimeNs: Long?,
-        val pauseStartTimeNs: Long?,
-        val pauseEndTimeNs: Long?,
+        val endTimeNs: Long,
+        val pauseStartTimeNs: Long,
+        val pauseEndTimeNs: Long,
         val finilisersDoneTimeNs: Long?,
-        val rootSet: RootSetStatistics?,
+        val rootSet: RootSetStatistics,
         val memoryUsageBefore: Map<String, MemoryUsage>,
         val memoryUsageAfter: Map<String, MemoryUsage>,
 ) {
-    val duration: Duration?
-        get() = endTimeNs?.let { (it - startTimeNs).nanoseconds }
-    val pauseDuration: Duration?
-        get() = if (pauseEndTimeNs != null && pauseStartTimeNs != null) (pauseEndTimeNs - pauseStartTimeNs).nanoseconds else null
-    val durationWithFinalizers: Duration?
-        get() = finilisersDoneTimeNs?.let { (it - startTimeNs).nanoseconds }
-
     internal companion object {
         val lastGCInfo: GCInfo?
             get() = getGcInfo(0)
-        val runningGCInfo: GCInfo?
-            get() = getGcInfo(1)
 
         private fun getGcInfo(id: Int) = GCInfoBuilder().apply { fill(id) }.build();
     }
@@ -115,8 +99,8 @@ private class GCInfoBuilder() {
     var pauseEndTimeNs: Long? = null
     var finalizersDoneTimeNs: Long? = null
     var rootSet: RootSetStatistics? = null
-    var memoryUsageBefore: MutableMap<String, MemoryUsage>? = null
-    var memoryUsageAfter: MutableMap<String, MemoryUsage>? = null
+    var memoryUsageBefore = mutableMapOf<String, MemoryUsage>()
+    var memoryUsageAfter = mutableMapOf<String, MemoryUsage>()
 
     @ExportForCppRuntime("Kotlin_Internal_GC_GCInfoBuilder_setEpoch")
     private fun setEpoch(value: Long) {
@@ -157,37 +141,27 @@ private class GCInfoBuilder() {
     private fun setMemoryUsageBefore(name: NativePtr, objectsCount: Long, totalObjectsSize: Long) {
         val nameString = interpretCPointer<ByteVar>(name)!!.toKString()
         val memoryUsage = MemoryUsage(objectsCount, totalObjectsSize)
-        if (memoryUsageBefore == null) {
-            memoryUsageBefore = mutableMapOf(nameString to memoryUsage)
-        } else {
-            memoryUsageBefore!!.put(nameString, memoryUsage)
-        }
+        memoryUsageBefore[nameString] = memoryUsage
     }
 
     @ExportForCppRuntime("Kotlin_Internal_GC_GCInfoBuilder_setMemoryUsageAfter")
     private fun setMemoryUsageAfter(name: NativePtr, objectsCount: Long, totalObjectsSize: Long) {
         val nameString = interpretCPointer<ByteVar>(name)!!.toKString()
         val memoryUsage = MemoryUsage(objectsCount, totalObjectsSize)
-        if (memoryUsageAfter == null) {
-            memoryUsageAfter = mutableMapOf(nameString to memoryUsage)
-        } else {
-            memoryUsageAfter!!.put(nameString, memoryUsage)
-        }
+        memoryUsageAfter[nameString] = memoryUsage
     }
 
     fun build(): GCInfo? {
-        return if (epoch == null || startTimeNs == null)
-            null
-        else GCInfo(
-                epoch!!,
-                startTimeNs!!,
-                endTimeNs,
-                pauseStartTimeNs,
-                pauseEndTimeNs,
+        return GCInfo(
+                epoch ?: return null,
+                startTimeNs ?: return null,
+                endTimeNs ?: return null,
+                pauseStartTimeNs ?: return null,
+                pauseEndTimeNs ?: return null,
                 finalizersDoneTimeNs,
-                rootSet,
-                memoryUsageBefore?.toMap() ?: emptyMap(),
-                memoryUsageAfter?.toMap() ?: emptyMap()
+                rootSet ?: return null,
+                memoryUsageBefore.toMap(),
+                memoryUsageAfter.toMap()
         )
     }
 

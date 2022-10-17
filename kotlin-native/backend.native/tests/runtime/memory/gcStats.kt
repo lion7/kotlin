@@ -57,15 +57,7 @@ fun `check everything is filled at the end`() {
     GC.collect()
     val stat = GC.lastGCInfo
     assertNotNull(stat)
-    assertNotNull(stat.endTimeNs)
-    assertNotNull(stat.pauseStartTimeNs)
-    assertNotNull(stat.pauseEndTimeNs)
+    // GC.collect is waiting for finalizers, so it should bet not null
     assertNotNull(stat.finilisersDoneTimeNs)
-    assertNotNull(stat.rootSet)
-    assertNotNull(stat.memoryUsageBefore)
-    assertNotNull(stat.memoryUsageAfter)
-    assertNotNull(stat.duration)
-    assertNotNull(stat.pauseDuration)
-    assertNotNull(stat.durationWithFinalizers)
 }
 

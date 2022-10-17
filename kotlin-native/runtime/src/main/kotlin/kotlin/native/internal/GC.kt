@@ -271,13 +271,17 @@ object GC {
     @Deprecated("No-op in modern GC implementation")
     external fun detectCycles(): Array<Any>?
 
+    /**
+     * Returns statistics of the last finished garbage collection run.
+     * This information is supposed to be used for testing and debugging purposes only
+     *
+     * Can return null, if there was no garbage collection runs yet.
+     *
+     * Legacy MM: Always returns null
+     */
     @ExperimentalStdlibApi
     val lastGCInfo: GCInfo?
         get() = GCInfo.lastGCInfo
-
-    @ExperimentalStdlibApi
-    val runningGCInfo: GCInfo?
-        get() = GCInfo.runningGCInfo
 
     /**
      * Deprecated and unused. Always returns null.
