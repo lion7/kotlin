@@ -5,7 +5,6 @@
 
 package org.jetbrains.kotlin.resolve.jvm.checkers
 
-import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
@@ -15,6 +14,7 @@ import org.jetbrains.kotlin.load.java.lazy.descriptors.isJavaField
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtProperty
+import org.jetbrains.kotlin.resolve.DescriptorUtils
 import org.jetbrains.kotlin.resolve.checkers.DeclarationChecker
 import org.jetbrains.kotlin.resolve.checkers.DeclarationCheckerContext
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
@@ -33,10 +33,7 @@ object JvmPropertyVsFieldAmbiguityChecker : DeclarationChecker {
                 property.nameAsSafeName, NoLookupLocation.FROM_TEST
             ).forEach { mayBeField ->
                 if (!mayBeField.isJavaField) return@forEach
-                var field = mayBeField
-                while (field.kind == CallableMemberDescriptor.Kind.FAKE_OVERRIDE) {
-                    field = field.overriddenDescriptors.firstOrNull() ?: break
-                }
+                val field = DescriptorUtils.unwrapFakeOverride(mayBeField)
                 val fieldClassDescriptor = field.containingDeclaration as? ClassDescriptor
                 if (fieldClassDescriptor === descriptor) return@forEach
 

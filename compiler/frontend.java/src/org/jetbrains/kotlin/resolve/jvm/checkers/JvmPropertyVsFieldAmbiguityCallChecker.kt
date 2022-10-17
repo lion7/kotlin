@@ -6,12 +6,12 @@
 package org.jetbrains.kotlin.resolve.jvm.checkers
 
 import com.intellij.psi.PsiElement
-import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.PropertyDescriptor
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.load.java.lazy.descriptors.isJavaField
+import org.jetbrains.kotlin.resolve.DescriptorUtils
 import org.jetbrains.kotlin.resolve.calls.checkers.CallChecker
 import org.jetbrains.kotlin.resolve.calls.checkers.CallCheckerContext
 import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
@@ -24,10 +24,7 @@ object JvmPropertyVsFieldAmbiguityCallChecker : CallChecker {
         if (!resultingDescriptor.isJavaField) return
         val ownContainingClass = resultingDescriptor.containingDeclaration as? ClassDescriptor ?: return
 
-        var field = resultingDescriptor
-        while (field.kind == CallableMemberDescriptor.Kind.FAKE_OVERRIDE) {
-            field = field.overriddenDescriptors.firstOrNull() ?: break
-        }
+        val field = DescriptorUtils.unwrapFakeOverride(resultingDescriptor)
         val fieldClassDescriptor = field.containingDeclaration as? ClassDescriptor
         if (fieldClassDescriptor === ownContainingClass) return
 
