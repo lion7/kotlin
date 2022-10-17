@@ -32,7 +32,7 @@ class MemoryUsage(
  * These nodes are assumed to be used, even if there are no references for them.
  *
  * @property threadLocalReferences The number of objects in global variables with `@ThreadLocal` annotation.
- *                                 Object is counted for each thread it was initialized.
+ *                                 Object is counted once per each thread it was initialized in.
  * @property stackReferences The number of objects referenced from the stack of any thread.
  *                           These are function local variables and different temporary values, as function call arguments and
  *                           return values. They would be automatically removed from the root set when a corresponding function
