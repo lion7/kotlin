@@ -31,13 +31,18 @@ object JvmPropertyVsFieldAmbiguityCallChecker : CallChecker {
         // If we have visible alternative property, we leave everything as is (see KT-54393)
         ownContainingClass.unsubstitutedMemberScope.getContributedVariables(
             resultingDescriptor.name, NoLookupLocation.FROM_TEST
-        ).forEach { alternativeProperty ->
-            if (alternativeProperty !== resultingDescriptor) {
-                val hasLateInit = alternativeProperty.isLateInit
-                if (!hasLateInit && alternativeProperty.getter?.isDefault != false) return@forEach
+        ).forEach { alternativePropertyDescriptor ->
+            if (alternativePropertyDescriptor !== resultingDescriptor) {
+                val hasLateInit = alternativePropertyDescriptor.isLateInit
+                if (!hasLateInit && alternativePropertyDescriptor.getter?.isDefault != false) return@forEach
+                val propertyClassDescriptor =
+                    DescriptorUtils.unwrapFakeOverride(alternativePropertyDescriptor).containingDeclaration as? ClassDescriptor
+                if (fieldClassDescriptor != null && propertyClassDescriptor != null &&
+                    DescriptorUtils.isSubclass(fieldClassDescriptor, propertyClassDescriptor)
+                ) return@forEach
                 if (DescriptorVisibilities.isVisible(
                         /* receiver = */ resolvedCall.dispatchReceiver,
-                        /* what = */ alternativeProperty,
+                        /* what = */ alternativePropertyDescriptor,
                         /* from = */ context.scope.ownerDescriptor,
                         /* useSpecialRulesForPrivateSealedConstructors = */ true
                     )
