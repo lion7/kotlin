@@ -48,7 +48,7 @@ internal class KtFe10PsiAnonymousFunctionSymbol(
 
     override val receiverType: KtType?
         get() = withValidityAssertion {
-            if (psi.isExtensionDeclaration()) {
+            if (!psi.isExtensionDeclaration()) {
                 return null
             }
 
