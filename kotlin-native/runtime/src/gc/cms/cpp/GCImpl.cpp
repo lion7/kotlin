@@ -9,6 +9,7 @@
 #include "GCStatistics.hpp"
 #include "MarkAndSweepUtils.hpp"
 #include "ThreadSuspension.hpp"
+#include "WeakRefBarriers.hpp"
 #include "std_support/Memory.hpp"
 
 using namespace kotlin;
@@ -128,4 +129,25 @@ ALWAYS_INLINE void gc::GC::processArrayInMark(void* state, ArrayHeader* array) n
 // static
 ALWAYS_INLINE void gc::GC::processFieldInMark(void* state, ObjHeader* field) noexcept {
     gc::internal::processFieldInMark<gc::internal::MarkTraits>(state, field);
+}
+
+// static
+ALWAYS_INLINE OBJ_GETTER(gc::GC::weakRefRead, ObjHeader* const * weakRefAddress) noexcept {
+    RETURN_RESULT_OF(gc::weakRefRead, weakRefAddress);
+}
+
+
+// static
+ALWAYS_INLINE ObjHeader* gc::GC::weakRefReadUnsafe(ObjHeader* const * weakRefAddress) noexcept {
+    return gc::weakRefReadUnsafe(weakRefAddress);
+}
+
+// static
+ALWAYS_INLINE void gc::GC::weakRefMark(ObjHeader** weakRefAddress) noexcept {
+    gc::weakRefMark(weakRefAddress);
+}
+
+// static
+ALWAYS_INLINE void gc::GC::weakRefResetMark(ObjHeader** weakRefAddress) noexcept {
+    gc::weakRefResetMark(weakRefAddress);
 }

@@ -124,6 +124,11 @@ void releaseAsAssociatedObjectImp(id self, SEL _cmd, ReleaseMode mode) {
 
   auto* backRef = getBackRef(self, classData);
 
+  if (ReleaseModeIsForMarking(mode)) {
+    backRef->mark(mode == ReleaseMode::kMark);
+    return;
+  }
+
   // The deallocation involves running [self dealloc] which can contain arbitrary code.
   // In particular, this code can retain and release [self]. Obj-C and Swift runtimes handle this
   // gracefully (unless the object gets accessed after the deallocation of course), but Kotlin doesn't.

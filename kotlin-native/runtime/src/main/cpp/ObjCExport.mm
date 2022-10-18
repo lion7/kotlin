@@ -128,6 +128,20 @@ extern "C" ALWAYS_INLINE void Kotlin_ObjCExport_detachAssociatedObject(void* ass
   }
 }
 
+extern "C" ALWAYS_INLINE void Kotlin_ObjCExport_markAssociatedObject(void* associatedObject) {
+  if (associatedObject != nullptr) {
+    // Not switching to native: can't call user code, and also called by GC.
+    send_releaseAsAssociatedObject(associatedObject, ReleaseMode::kMark);
+  }
+}
+
+extern "C" ALWAYS_INLINE void Kotlin_ObjCExport_resetMarkAssociatedObject(void* associatedObject) {
+  if (associatedObject != nullptr) {
+    // Not switching to native: can't call user code, and also called by GC.
+    send_releaseAsAssociatedObject(associatedObject, ReleaseMode::kResetMark);
+  }
+}
+
 extern "C" id Kotlin_ObjCExport_convertUnitToRetained(ObjHeader* unitInstance) {
   static dispatch_once_t onceToken;
   static id instance = nullptr;

@@ -129,17 +129,19 @@ void BackRefFromAssociatedObject::addRef() {
   // and from Runnable state (Kotlin_ObjCExport_refToObjC).
 
   if (atomicAdd(&refCount, 1) == 1) {
-    if (obj_ == nullptr) return; // E.g. after [detach].
+    ObjHeader* obj = kotlin::mm::WeakRefReadUnsafe(&obj_);
+
+    if (obj == nullptr) return; // E.g. after [detach].
 
     kotlin::CalledFromNativeGuard guard(/* reentrant */ true);
 
     // There are no references to the associated object itself, so Kotlin object is being passed from Kotlin,
     // and it is owned therefore.
-    ensureRefAccessible<errorPolicy>(obj_, context_); // TODO: consider removing explicit verification.
-
+    ensureRefAccessible<errorPolicy>(obj, context_); // TODO: consider removing explicit verification.
+                                                      //
     // Foreign reference has already been deinitialized (see [releaseRef]).
     // Create a new one:
-    context_ = InitForeignRef(obj_);
+    context_ = InitForeignRef(obj);
   }
 }
 
@@ -149,20 +151,18 @@ template void BackRefFromAssociatedObject::addRef<ErrorPolicy::kTerminate>();
 template <ErrorPolicy errorPolicy>
 bool BackRefFromAssociatedObject::tryAddRef() {
   static_assert(errorPolicy != ErrorPolicy::kDefaultValue, "Cannot use default return value here");
-  kotlin::CalledFromNativeGuard guard;
-
-  if (obj_ == nullptr) return false; // E.g. after [detach].
 
   if (CurrentMemoryModel == MemoryModel::kExperimental) {
+      kotlin::CalledFromNativeGuard guard;
       ObjHolder holder;
-      ObjHeader* obj = TryRef(obj_, holder.slot());
+      ObjHeader* obj = kotlin::mm::WeakRefRead(&obj_, holder.slot());
       // Failed to lock weak reference.
       if (obj == nullptr) return false;
-      RuntimeAssert(obj == obj_, "Mismatched locked weak. obj=%p obj_=%p", obj, obj_);
       // TODO: This is a very weird way to ask for "unsafe" addRef.
       addRef<ErrorPolicy::kIgnore>();
       return true;
   } else {
+      if (obj_ == nullptr) return false; // E.g. after [detach].
       // Suboptimal but simple:
       ensureRefAccessible<errorPolicy>(obj_, context_);
 
@@ -185,13 +185,15 @@ template bool BackRefFromAssociatedObject::tryAddRef<ErrorPolicy::kTerminate>();
 void BackRefFromAssociatedObject::releaseRef() {
   ForeignRefContext context = context_;
   if (atomicAdd(&refCount, -1) == 0) {
-    if (obj_ == nullptr) return; // E.g. after [detach].
-
     kotlin::CalledFromNativeGuard guard;
+
+    ObjHeader* obj = kotlin::mm::WeakRefReadUnsafe(&obj_);
+
+    if (obj == nullptr) return; // E.g. after [detach].
 
     // Note: by this moment "subsequent" addRef may have already happened and patched context_.
     // So use the value loaded before refCount update:
-    DeinitForeignRef(obj_, context);
+    DeinitForeignRef(obj, context);
     // From this moment [context] is generally a dangling pointer.
     // This is handled in [IsForeignRefAccessible] and [addRef].
     // TODO: This probably isn't fine in new MM. Make sure it works.
@@ -210,19 +212,29 @@ ALWAYS_INLINE void BackRefFromAssociatedObject::assertDetached() {
 template <ErrorPolicy errorPolicy>
 ObjHeader* BackRefFromAssociatedObject::ref() const {
   kotlin::AssertThreadState(kotlin::ThreadState::kRunnable);
-  RuntimeAssert(obj_ != nullptr, "no valid Kotlin object found");
 
-  if (!ensureRefAccessible<errorPolicy>(obj_, context_)) {
+  ObjHeader* obj = kotlin::mm::WeakRefReadUnsafe(&obj_);
+  RuntimeAssert(obj != nullptr, "no valid Kotlin object found");
+
+  if (!ensureRefAccessible<errorPolicy>(obj, context_)) {
     return nullptr;
   }
 
-  AdoptReferenceFromSharedVariable(obj_);
-  return obj_;
+  AdoptReferenceFromSharedVariable(obj);
+  return obj;
 }
 
 template ObjHeader* BackRefFromAssociatedObject::ref<ErrorPolicy::kDefaultValue>() const;
 template ObjHeader* BackRefFromAssociatedObject::ref<ErrorPolicy::kThrow>() const;
 template ObjHeader* BackRefFromAssociatedObject::ref<ErrorPolicy::kTerminate>() const;
+
+void BackRefFromAssociatedObject::mark(bool mark) noexcept {
+  if (mark) {
+    kotlin::mm::WeakRefMark(&obj_);
+  } else {
+    kotlin::mm::WeakRefResetMark(&obj_);
+  }
+}
 
 extern "C" {
 RUNTIME_NOTHROW void KRefSharedHolder_initLocal(KRefSharedHolder* holder, ObjHeader* obj) {

@@ -655,3 +655,19 @@ RUNTIME_NOTHROW ALWAYS_INLINE extern "C" void Kotlin_processEmptyObjectInMark(vo
     // Empty object. Nothing to do.
     // TODO: Try to generate it in the code generator.
 }
+
+ALWAYS_INLINE OBJ_GETTER(mm::WeakRefRead, ObjHeader* const * weakRefAddress) noexcept {
+    RETURN_RESULT_OF(gc::GC::weakRefRead, weakRefAddress);
+}
+
+ALWAYS_INLINE ObjHeader* mm::WeakRefReadUnsafe(ObjHeader* const * weakRefAddress) noexcept {
+    return gc::GC::weakRefReadUnsafe(weakRefAddress);
+}
+
+ALWAYS_INLINE void mm::WeakRefMark(ObjHeader** weakRefAddress) noexcept {
+    gc::GC::weakRefMark(weakRefAddress);
+}
+
+ALWAYS_INLINE void mm::WeakRefResetMark(ObjHeader** weakRefAddress) noexcept {
+    gc::GC::weakRefResetMark(weakRefAddress);
+}

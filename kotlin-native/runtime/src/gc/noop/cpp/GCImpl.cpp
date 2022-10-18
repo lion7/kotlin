@@ -105,3 +105,23 @@ ALWAYS_INLINE void gc::GC::processArrayInMark(void* state, ArrayHeader* array) n
 
 // static
 ALWAYS_INLINE void gc::GC::processFieldInMark(void* state, ObjHeader* field) noexcept {}
+
+// static
+ALWAYS_INLINE OBJ_GETTER(gc::GC::weakRefRead, ObjHeader* const * weakRefAddress) noexcept {
+    RETURN_OBJ(*weakRefAddress);
+}
+
+// static
+ALWAYS_INLINE ObjHeader* gc::GC::weakRefReadUnsafe(ObjHeader* const * weakRefAddress) noexcept {
+    return *weakRefAddress;
+}
+
+// static
+ALWAYS_INLINE void gc::GC::weakRefMark(ObjHeader** weakRefAddress) noexcept {
+    // No-op
+}
+
+// static
+ALWAYS_INLINE void gc::GC::weakRefResetMark(ObjHeader** weakRefAddress) noexcept {
+    // No-op
+}

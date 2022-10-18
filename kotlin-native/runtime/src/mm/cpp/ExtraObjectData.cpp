@@ -85,3 +85,27 @@ mm::ExtraObjectData::~ExtraObjectData() {
     RuntimeAssert(associatedObject_ == nullptr, "Object must have cleared associated object");
 #endif
 }
+
+void mm::ExtraObjectData::mark() noexcept {
+    setFlag(FLAGS_MARKED);
+    // TODO: If ExtraObjectData is a proper object, it can be a weak counter itself,
+    //       and the following are unnecessary.
+    if (HasWeakReferenceCounter()) {
+        WeakReferenceCounterMark(GetWeakReferenceCounter());
+    }
+#ifdef KONAN_OBJC_INTEROP
+    Kotlin_ObjCExport_markAssociatedObject(associatedObject_);
+#endif
+}
+
+void mm::ExtraObjectData::resetMark() noexcept {
+    resetFlag(FLAGS_MARKED);
+    // TODO: If ExtraObjectData is a proper object, it can be a weak counter itself,
+    //       and the following are unnecessary.
+    if (HasWeakReferenceCounter()) {
+        WeakReferenceCounterResetMark(GetWeakReferenceCounter());
+    }
+#ifdef KONAN_OBJC_INTEROP
+    Kotlin_ObjCExport_resetMarkAssociatedObject(associatedObject_);
+#endif
+}

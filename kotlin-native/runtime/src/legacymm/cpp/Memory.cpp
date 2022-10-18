@@ -3872,4 +3872,18 @@ bool kotlin::FinalizersThreadIsRunning() noexcept {
     return false;
 }
 
+OBJ_GETTER(kotlin::mm::WeakRefRead, ObjHeader* const * weakRefAddress) noexcept {
+    RuntimeFail("Only for new MM");
+}
 
+ObjHeader* kotlin::mm::WeakRefReadUnsafe(ObjHeader* const * weakRefAddress) noexcept {
+    RuntimeFail("Only for new MM");
+}
+
+void kotlin::mm::WeakRefMark(ObjHeader** weakRefAddress) noexcept {
+    RuntimeFail("Only for new MM");
+}
+
+void kotlin::mm::WeakRefResetMark(ObjHeader** weakRefAddress) noexcept {
+    RuntimeFail("Only for new MM");
+}

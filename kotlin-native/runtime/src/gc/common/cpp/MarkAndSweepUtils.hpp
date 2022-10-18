@@ -74,6 +74,7 @@ bool collectRoot(typename Traits::MarkQueue& markQueue, ObjHeader* object) noexc
 // TODO: Consider making it noinline to keep loop in `Mark` small.
 template <typename Traits>
 void processExtraObjectData(GCHandle::GCMarkScope& markHandle, typename Traits::MarkQueue& markQueue, mm::ExtraObjectData& extraObjectData, ObjHeader* object) noexcept {
+    extraObjectData.mark();
     if (auto weakCounter = extraObjectData.GetWeakReferenceCounter()) {
         RuntimeAssert(
                 weakCounter->heap(), "Weak counter must be a heap object. object=%p counter=%p permanent=%d local=%d", object, weakCounter,
@@ -136,11 +137,14 @@ typename Traits::ObjectFactory::FinalizerQueue Sweep(GCHandle handle, typename T
     auto sweepHandle = handle.sweep();
 
     for (auto it = objectFactoryIter.begin(); it != objectFactoryIter.end();) {
+        auto* objHeader = it->GetObjHeader();
         if (Traits::TryResetMark(*it)) {
+            if (auto* extraObjectData = mm::ExtraObjectData::Get(objHeader)) {
+                extraObjectData->resetMark();
+            }
             ++it;
             continue;
         }
-        auto* objHeader = it->GetObjHeader();
         if (HasFinalizers(objHeader)) {
             objectFactoryIter.MoveAndAdvance(finalizerQueue, it);
         } else {

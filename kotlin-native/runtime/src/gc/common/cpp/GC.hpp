@@ -76,6 +76,11 @@ public:
     static void processArrayInMark(void* state, ArrayHeader* array) noexcept;
     static void processFieldInMark(void* state, ObjHeader* field) noexcept;
 
+    static OBJ_GETTER(weakRefRead, ObjHeader* const * weakRefAddress) noexcept;
+    static ObjHeader* weakRefReadUnsafe(ObjHeader* const * weakRefAddress) noexcept;
+    static void weakRefMark(ObjHeader** weakRefAddress) noexcept;
+    static void weakRefResetMark(ObjHeader** weakRefAddress) noexcept;
+
 private:
     std_support::unique_ptr<Impl> impl_;
 };

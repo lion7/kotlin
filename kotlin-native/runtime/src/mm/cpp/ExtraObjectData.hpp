@@ -27,6 +27,7 @@ public:
         FLAGS_FROZEN = 0,
         FLAGS_NEVER_FROZEN = 1,
         FLAGS_IN_FINALIZER_QUEUE = 2,
+        FLAGS_MARKED = 3,
     };
 
     static constexpr unsigned WEAK_REF_TAG = 1;
@@ -51,6 +52,7 @@ public:
 
     bool getFlag(Flags value) noexcept { return (flags_.load() & (1u << static_cast<uint32_t>(value))) != 0; }
     void setFlag(Flags value) noexcept { flags_.fetch_or(1u << static_cast<uint32_t>(value)); }
+    void resetFlag(Flags value) noexcept { flags_.fetch_and(~(1u << static_cast<uint32_t>(value))); }
 
 
     bool HasWeakReferenceCounter() noexcept { return hasPointerBits(weakReferenceCounterOrBaseObject_.load(), WEAK_REF_TAG); }
@@ -75,6 +77,10 @@ public:
             return header;
         }
     }
+
+    void mark() noexcept;
+    void resetMark() noexcept;
+    bool marked() noexcept { return getFlag(FLAGS_MARKED); }
 
     // info must be equal to objHeader->type_info(), but it needs to be loaded in advance to avoid data races
     explicit ExtraObjectData(ObjHeader* objHeader, const TypeInfo *info) noexcept :

@@ -136,6 +136,10 @@ static void injectToRuntime();
 }
 
 -(void)releaseAsAssociatedObject:(ReleaseMode)mode {
+  if (ReleaseModeIsForMarking(mode)) {
+    refHolder.mark(mode == ReleaseMode::kMark);
+    return;
+  }
   // This function is called by the GC. It made a decision to reclaim Kotlin object, and runs
   // deallocation hooks at the moment, including deallocation of the "associated object" ([self])
   // using the [super release] call below.

@@ -21,6 +21,7 @@
 #include "GCState.hpp"
 #include "FinalizerProcessor.hpp"
 #include "GCStatistics.hpp"
+#include "WeakRefBarriers.hpp"
 
 using namespace kotlin;
 
@@ -165,16 +166,27 @@ bool gc::ConcurrentMarkAndSweep::PerformFullGC(int64_t epoch) noexcept {
     gc::Mark<internal::MarkTraits>(gcHandle, markQueue_);
 
     mm::WaitForThreadsSuspension();
-    mm::ExtraObjectDataFactory& extraObjectDataFactory = mm::GlobalData::Instance().extraObjectDataFactory();
     auto markStats = gcHandle.getMarked();
     scheduler.gcData().UpdateAliveSetBytes(markStats.totalObjectsSize);
 
-    gc::SweepExtraObjects<SweepTraits>(gcHandle, extraObjectDataFactory);
-
     auto objectFactoryIterable = objectFactory_.LockForIter();
+
+    enableWeakRefBarriers();
 
     mm::ResumeThreads();
     gcHandle.threadsAreResumed();
+
+    mm::ExtraObjectDataFactory& extraObjectDataFactory = mm::GlobalData::Instance().extraObjectDataFactory();
+
+    gc::SweepExtraObjects<SweepTraits>(gcHandle, extraObjectDataFactory);
+
+    bool didSuspendAgain = mm::RequestThreadsSuspension();
+    RuntimeAssert(didSuspendAgain, "Only GC thread can request suspension");
+    mm::WaitForThreadsSuspension();
+
+    disableWeakRefBarriers();
+
+    mm::ResumeThreads();
 
     auto finalizerQueue = gc::Sweep<SweepTraits>(gcHandle, objectFactoryIterable);
 

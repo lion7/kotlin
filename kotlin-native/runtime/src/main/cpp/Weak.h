@@ -13,6 +13,8 @@ extern "C" {
 // Atomically clears counter object reference.
 void WeakReferenceCounterClear(ObjHeader* counter);
 ObjHeader* UnsafeWeakReferenceCounterGet(ObjHeader* counter);
+void WeakReferenceCounterMark(ObjHeader* counter);
+void WeakReferenceCounterResetMark(ObjHeader* counter);
 
 } // extern "C"
 

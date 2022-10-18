@@ -559,6 +559,16 @@ extern const bool kSupportsMultipleMutators;
 void StartFinalizerThreadIfNeeded() noexcept;
 bool FinalizersThreadIsRunning() noexcept;
 
+namespace mm {
+
+OBJ_GETTER(WeakRefRead, ObjHeader* const * weakRefAddress) noexcept;
+ObjHeader* WeakRefReadUnsafe(ObjHeader* const * weakRefAddress) noexcept;
+OBJ_GETTER(WeakRefRead, ObjHeader* const * weakRefAddress) noexcept;
+void WeakRefMark(ObjHeader** weakRefAddress) noexcept;
+void WeakRefResetMark(ObjHeader** weakRefAddress) noexcept;
+
+}
+
 } // namespace kotlin
 
 RUNTIME_NOTHROW ALWAYS_INLINE extern "C" void Kotlin_processObjectInMark(void* state, ObjHeader* object);
