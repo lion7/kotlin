@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2022 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -15,16 +15,17 @@ import org.jetbrains.kotlin.analysis.api.fir.symbols.pointers.KtFirTopLevelFunct
 import org.jetbrains.kotlin.analysis.api.fir.symbols.pointers.createSignature
 import org.jetbrains.kotlin.analysis.api.fir.utils.cached
 import org.jetbrains.kotlin.analysis.api.impl.base.util.kotlinFunctionInvokeCallableIds
+import org.jetbrains.kotlin.analysis.api.lifetime.KtLifetimeToken
+import org.jetbrains.kotlin.analysis.api.lifetime.withValidityAssertion
 import org.jetbrains.kotlin.analysis.api.symbols.KtFunctionSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KtReceiverParameterSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KtValueParameterSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.markers.KtSymbolKind
 import org.jetbrains.kotlin.analysis.api.symbols.pointers.CanNotCreateSymbolPointerForLocalLibraryDeclarationException
 import org.jetbrains.kotlin.analysis.api.symbols.pointers.KtPsiBasedSymbolPointer
 import org.jetbrains.kotlin.analysis.api.symbols.pointers.KtSymbolPointer
 import org.jetbrains.kotlin.analysis.api.symbols.pointers.WrongSymbolForSamConstructor
-import org.jetbrains.kotlin.analysis.api.lifetime.KtLifetimeToken
 import org.jetbrains.kotlin.analysis.api.types.KtType
-import org.jetbrains.kotlin.analysis.api.lifetime.withValidityAssertion
 import org.jetbrains.kotlin.analysis.low.level.api.fir.api.LLFirResolveSession
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibility
@@ -49,7 +50,7 @@ internal class KtFirFunctionSymbol(
         get() = withValidityAssertion { callableIdIfNonLocal in kotlinFunctionInvokeCallableIds }
 
     override val returnType: KtType get() = withValidityAssertion { firSymbol.returnType(builder) }
-    override val receiverType: KtType? get() = withValidityAssertion { firSymbol.receiverType(builder) }
+    override val receiver: KtReceiverParameterSymbol? get() = withValidityAssertion { firSymbol.receiver(builder) }
     override val contextReceivers: List<KtContextReceiver> by cached { firSymbol.createContextReceivers(builder) }
 
     override val typeParameters by cached { firSymbol.createKtTypeParameters(builder) }

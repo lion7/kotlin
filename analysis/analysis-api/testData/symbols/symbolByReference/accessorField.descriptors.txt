@@ -29,7 +29,7 @@ KtBackingFieldSymbol:
       isOverride: false
       modality: FINAL
       origin: SOURCE
-      receiverType: null
+      receiver: null
       returnType: kotlin/Int
       symbolKind: ACCESSOR
       typeParameters: []
@@ -50,7 +50,7 @@ KtBackingFieldSymbol:
     modality: FINAL
     name: x
     origin: SOURCE
-    receiverType: null
+    receiver: null
     returnType: kotlin/Int
     setter: KtPropertySetterSymbol:
       annotationsList: [
@@ -87,11 +87,11 @@ KtBackingFieldSymbol:
         isVararg: false
         name: value
         origin: SOURCE
-        receiverType: null
+        receiver: null
         returnType: kotlin/Int
         symbolKind: LOCAL
         typeParameters: []
-      receiverType: null
+      receiver: null
       returnType: kotlin/Unit
       symbolKind: ACCESSOR
       typeParameters: []
@@ -114,7 +114,7 @@ KtBackingFieldSymbol:
           isVararg: false
           name: value
           origin: SOURCE
-          receiverType: null
+          receiver: null
           returnType: kotlin/Int
           symbolKind: LOCAL
           typeParameters: []
@@ -123,7 +123,7 @@ KtBackingFieldSymbol:
     symbolKind: TOP_LEVEL
     typeParameters: []
     visibility: Public
-  receiverType: null
+  receiver: null
   returnType: kotlin/Int
   symbolKind: LOCAL
   typeParameters: []

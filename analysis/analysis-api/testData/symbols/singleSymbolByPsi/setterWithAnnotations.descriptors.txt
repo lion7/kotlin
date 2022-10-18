@@ -33,11 +33,11 @@ KtPropertySetterSymbol:
     isVararg: false
     name: value
     origin: SOURCE
-    receiverType: null
+    receiver: null
     returnType: kotlin/Int
     symbolKind: LOCAL
     typeParameters: []
-  receiverType: null
+  receiver: null
   returnType: kotlin/Unit
   symbolKind: ACCESSOR
   typeParameters: []
@@ -60,7 +60,7 @@ KtPropertySetterSymbol:
       isVararg: false
       name: value
       origin: SOURCE
-      receiverType: null
+      receiver: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []

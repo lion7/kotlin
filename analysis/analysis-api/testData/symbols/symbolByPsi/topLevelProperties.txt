@@ -14,7 +14,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiverType: null
+    receiver: null
     returnType: kotlin/Int
     symbolKind: ACCESSOR
     typeParameters: []
@@ -35,7 +35,7 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: x
   origin: SOURCE
-  receiverType: null
+  receiver: null
   returnType: kotlin/Int
   setter: null
   symbolKind: TOP_LEVEL
@@ -64,7 +64,10 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiverType: kotlin/Int
+    receiver: KtReceiverParameterSymbol:
+      annotationsList: []
+      origin: SOURCE
+      type: kotlin/Int
     returnType: kotlin/Int
     symbolKind: ACCESSOR
     typeParameters: []
@@ -85,7 +88,10 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: y
   origin: SOURCE
-  receiverType: kotlin/Int
+  receiver: KtReceiverParameterSymbol:
+    annotationsList: []
+    origin: SOURCE
+    type: kotlin/Int
   returnType: kotlin/Int
   setter: null
   symbolKind: TOP_LEVEL
@@ -114,7 +120,10 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiverType: kotlin/Short
+    receiver: KtReceiverParameterSymbol:
+      annotationsList: []
+      origin: SOURCE
+      type: kotlin/Short
     returnType: kotlin/Long
     symbolKind: ACCESSOR
     typeParameters: []
@@ -135,7 +144,10 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: get
   origin: SOURCE
-  receiverType: kotlin/Short
+  receiver: KtReceiverParameterSymbol:
+    annotationsList: []
+    origin: SOURCE
+    type: kotlin/Short
   returnType: kotlin/Long
   setter: KtPropertySetterSymbol:
     annotationsList: []
@@ -162,11 +174,14 @@ KtKotlinPropertySymbol:
       isVararg: false
       name: value
       origin: SOURCE
-      receiverType: null
+      receiver: null
       returnType: kotlin/Long
       symbolKind: LOCAL
       typeParameters: []
-    receiverType: kotlin/Short
+    receiver: KtReceiverParameterSymbol:
+      annotationsList: []
+      origin: SOURCE
+      type: kotlin/Short
     returnType: kotlin/Unit
     symbolKind: ACCESSOR
     typeParameters: []
@@ -184,7 +199,7 @@ KtKotlinPropertySymbol:
         isVararg: false
         name: value
         origin: SOURCE
-        receiverType: null
+        receiver: null
         returnType: kotlin/Long
         symbolKind: LOCAL
         typeParameters: []

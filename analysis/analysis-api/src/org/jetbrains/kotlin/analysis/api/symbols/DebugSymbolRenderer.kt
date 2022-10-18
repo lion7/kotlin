@@ -95,14 +95,14 @@ public object DebugSymbolRenderer {
         }
     }
 
-    private fun PrettyPrinter.renderSymbol(symbol: KtSymbol) {
+    private fun PrettyPrinter.renderSymbol(symbol: KtSymbol, customIgnoredPropertynames: List<String> = emptyList()) {
         renderSymbolHeader(symbol)
         val apiClass = getSymbolApiClass(symbol)
         withIndent {
             apiClass.members
                 .asSequence()
                 .filterIsInstance<KProperty<*>>()
-                .filter { it.name !in ignoredPropertyNames }
+                .filter { it.name !in ignoredPropertyNames && it.name !in customIgnoredPropertynames }
                 .sortedBy { it.name }
                 .forEach { renderProperty(it, symbol) }
         }
@@ -136,6 +136,11 @@ public object DebugSymbolRenderer {
 
         if (symbol is KtPropertyGetterSymbol || symbol is KtPropertySetterSymbol || symbol is KtValueParameterSymbol || symbol is KtPropertySymbol) {
             renderSymbol(symbol)
+            return
+        }
+
+        if (symbol is KtReceiverParameterSymbol) {
+            renderSymbol(symbol, listOf("owningCallableSymbol"))
             return
         }
 

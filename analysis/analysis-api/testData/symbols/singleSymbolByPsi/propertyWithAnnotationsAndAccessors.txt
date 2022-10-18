@@ -24,7 +24,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiverType: null
+    receiver: null
     returnType: kotlin/Int
     symbolKind: ACCESSOR
     typeParameters: []
@@ -45,7 +45,7 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: x
   origin: SOURCE
-  receiverType: null
+  receiver: null
   returnType: kotlin/Int
   setter: KtPropertySetterSymbol:
     annotationsList: [
@@ -82,11 +82,11 @@ KtKotlinPropertySymbol:
       isVararg: false
       name: value
       origin: SOURCE
-      receiverType: null
+      receiver: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
-    receiverType: null
+    receiver: null
     returnType: kotlin/Unit
     symbolKind: ACCESSOR
     typeParameters: []
@@ -109,7 +109,7 @@ KtKotlinPropertySymbol:
         isVararg: false
         name: value
         origin: SOURCE
-        receiverType: null
+        receiver: null
         returnType: kotlin/Int
         symbolKind: LOCAL
         typeParameters: []

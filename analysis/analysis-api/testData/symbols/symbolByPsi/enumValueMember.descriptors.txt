@@ -7,7 +7,7 @@ KtConstructorSymbol:
   isExtension: false
   isPrimary: true
   origin: SOURCE
-  receiverType: null
+  receiver: null
   returnType: Style
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -32,7 +32,7 @@ KtConstructorSymbol:
           isOverride: false
           modality: FINAL
           origin: SOURCE
-          receiverType: null
+          receiver: null
           returnType: kotlin/String
           symbolKind: ACCESSOR
           typeParameters: []
@@ -53,7 +53,7 @@ KtConstructorSymbol:
         modality: FINAL
         name: value
         origin: SOURCE
-        receiverType: null
+        receiver: null
         returnType: kotlin/String
         setter: null
         symbolKind: CLASS_MEMBER
@@ -67,7 +67,7 @@ KtConstructorSymbol:
       isVararg: false
       name: value
       origin: SOURCE
-      receiverType: null
+      receiver: null
       returnType: kotlin/String
       symbolKind: LOCAL
       typeParameters: []
@@ -92,7 +92,7 @@ KtKotlinPropertySymbol:
     isOverride: true
     modality: FINAL
     origin: SOURCE
-    receiverType: null
+    receiver: null
     returnType: kotlin/String
     symbolKind: ACCESSOR
     typeParameters: []
@@ -113,7 +113,7 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: exitAnimation
   origin: SOURCE
-  receiverType: null
+  receiver: null
   returnType: kotlin/String
   setter: null
   symbolKind: CLASS_MEMBER
@@ -135,7 +135,7 @@ KtEnumEntrySymbol:
   isExtension: false
   name: SHEET
   origin: SOURCE
-  receiverType: null
+  receiver: null
   returnType: Style
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -158,7 +158,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: ABSTRACT
     origin: SOURCE
-    receiverType: null
+    receiver: null
     returnType: kotlin/String
     symbolKind: ACCESSOR
     typeParameters: []
@@ -179,7 +179,7 @@ KtKotlinPropertySymbol:
   modality: ABSTRACT
   name: exitAnimation
   origin: SOURCE
-  receiverType: null
+  receiver: null
   returnType: kotlin/String
   setter: null
   symbolKind: CLASS_MEMBER

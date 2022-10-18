@@ -17,7 +17,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiverType: null
+    receiver: null
     returnType: kotlin/Int
     symbolKind: ACCESSOR
     typeParameters: []
@@ -38,7 +38,7 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: i
   origin: SOURCE
-  receiverType: null
+  receiver: null
   returnType: kotlin/Int
   setter: null
   symbolKind: TOP_LEVEL
@@ -70,7 +70,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiverType: null
+    receiver: null
     returnType: kotlin/Int
     symbolKind: ACCESSOR
     typeParameters: []
@@ -91,7 +91,7 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: i2
   origin: SOURCE
-  receiverType: null
+  receiver: null
   returnType: kotlin/Int
   setter: null
   symbolKind: TOP_LEVEL
@@ -120,7 +120,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiverType: null
+    receiver: null
     returnType: kotlin/Int
     symbolKind: ACCESSOR
     typeParameters: []
@@ -141,7 +141,7 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: i3
   origin: SOURCE
-  receiverType: null
+  receiver: null
   returnType: kotlin/Int
   setter: KtPropertySetterSymbol:
     annotationsList: [
@@ -171,11 +171,11 @@ KtKotlinPropertySymbol:
       isVararg: false
       name: <set-?>
       origin: SOURCE
-      receiverType: null
+      receiver: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
-    receiverType: null
+    receiver: null
     returnType: kotlin/Unit
     symbolKind: ACCESSOR
     typeParameters: []
@@ -193,7 +193,7 @@ KtKotlinPropertySymbol:
         isVararg: false
         name: <set-?>
         origin: SOURCE
-        receiverType: null
+        receiver: null
         returnType: kotlin/Int
         symbolKind: LOCAL
         typeParameters: []
@@ -228,7 +228,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiverType: null
+    receiver: null
     returnType: kotlin/Int
     symbolKind: ACCESSOR
     typeParameters: []
@@ -249,7 +249,7 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: i4
   origin: SOURCE
-  receiverType: null
+  receiver: null
   returnType: kotlin/Int
   setter: KtPropertySetterSymbol:
     annotationsList: [
@@ -279,11 +279,11 @@ KtKotlinPropertySymbol:
       isVararg: false
       name: <set-?>
       origin: SOURCE
-      receiverType: null
+      receiver: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
-    receiverType: null
+    receiver: null
     returnType: kotlin/Unit
     symbolKind: ACCESSOR
     typeParameters: []
@@ -301,7 +301,7 @@ KtKotlinPropertySymbol:
         isVararg: false
         name: <set-?>
         origin: SOURCE
-        receiverType: null
+        receiver: null
         returnType: kotlin/Int
         symbolKind: LOCAL
         typeParameters: []
@@ -337,7 +337,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: f
   origin: SOURCE
-  receiverType: null
+  receiver: null
   returnType: kotlin/Int
   symbolKind: TOP_LEVEL
   typeParameters: []
@@ -391,7 +391,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiverType: null
+    receiver: null
     returnType: kotlin/Int
     symbolKind: ACCESSOR
     typeParameters: []
@@ -412,7 +412,7 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: i2
   origin: SOURCE
-  receiverType: null
+  receiver: null
   returnType: kotlin/Int
   setter: null
   symbolKind: CLASS_MEMBER
@@ -446,7 +446,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: f2
   origin: SOURCE
-  receiverType: null
+  receiver: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -498,7 +498,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiverType: null
+    receiver: null
     returnType: kotlin/Int
     symbolKind: ACCESSOR
     typeParameters: []
@@ -519,7 +519,7 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: j
   origin: SOURCE
-  receiverType: null
+  receiver: null
   returnType: kotlin/Int
   setter: null
   symbolKind: TOP_LEVEL
@@ -551,7 +551,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiverType: null
+    receiver: null
     returnType: kotlin/Int
     symbolKind: ACCESSOR
     typeParameters: []
@@ -572,7 +572,7 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: j2
   origin: SOURCE
-  receiverType: null
+  receiver: null
   returnType: kotlin/Int
   setter: null
   symbolKind: TOP_LEVEL
@@ -604,7 +604,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiverType: null
+    receiver: null
     returnType: kotlin/Int
     symbolKind: ACCESSOR
     typeParameters: []
@@ -625,7 +625,7 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: j2
   origin: SOURCE
-  receiverType: null
+  receiver: null
   returnType: kotlin/Int
   setter: null
   symbolKind: TOP_LEVEL
