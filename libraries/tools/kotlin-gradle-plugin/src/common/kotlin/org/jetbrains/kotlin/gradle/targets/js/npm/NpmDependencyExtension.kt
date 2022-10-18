@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.gradle.targets.js.npm
 import groovy.lang.Closure
 import groovy.lang.GString
 import org.gradle.api.Project
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.reflect.TypeOf
 import org.jetbrains.kotlin.gradle.targets.js.npm.NpmDependency.Scope.*
@@ -90,7 +91,7 @@ private abstract class NpmDependencyExtensionDelegate(
         version: String,
     ): NpmDependency =
         NpmDependency(
-            project = project,
+            objectFactory = project.objects,
             name = name,
             version = version,
             scope = scope,
@@ -225,10 +226,10 @@ private fun defaultNpmDependencyDelegate(
             directory: File,
         ): NpmDependency =
             directoryNpmDependency(
-                project = project,
+                objectFactory = project.objects,
+                scope = scope,
                 name = name,
                 directory = directory,
-                scope = scope,
             )
 
         override fun processNonStringFirstArgument(arg: Any?, vararg args: Any?): NpmDependency {
