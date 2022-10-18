@@ -1,11 +1,12 @@
 /*
- * Copyright 2010-2018 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2022 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package org.jetbrains.kotlin.fir.symbols
 
 import org.jetbrains.kotlin.KtSourceElement
+import org.jetbrains.kotlin.fir.FirAnnotationContainer
 import org.jetbrains.kotlin.fir.FirModuleData
 import org.jetbrains.kotlin.fir.declarations.FirDeclaration
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
@@ -40,25 +41,31 @@ abstract class FirBasedSymbol<E : FirDeclaration> {
         get() = fir.annotations
 
     val resolvedAnnotationsWithArguments: List<FirAnnotation>
-        get() {
-            // NB: annotation argument mapping (w/ vararg) are built/replaced during call completion, hence BODY_RESOLVE.
-            // TODO(KT-53371): optimize ARGUMENTS_OF_ANNOTATIONS to build annotation argument mapping too.
-            // TODO(KT-53519): Even with BODY_RESOLVE, argument mapping for annotations on [FirValueParameter] is not properly built.
-            lazyResolveToPhase(FirResolvePhase.BODY_RESOLVE)
-            return fir.annotations
-        }
+        get() = fir.resolvedAnnotationsWithArguments(this)
 
     val resolvedAnnotationsWithClassIds: List<FirAnnotation>
-        get() {
-            lazyResolveToPhase(FirResolvePhase.TYPES)
-            return fir.annotations
-        }
+        get() = fir.resolvedAnnotationsWithClassIds(this)
 
     val resolvedAnnotationClassIds: List<ClassId>
-        get() {
-            lazyResolveToPhase(FirResolvePhase.TYPES)
-            return fir.annotations.mapNotNull { (it.annotationTypeRef.coneType as? ConeClassLikeType)?.lookupTag?.classId }
-        }
+        get() = fir.resolvedAnnotationClassIds(this)
+}
+
+fun FirAnnotationContainer.resolvedAnnotationsWithArguments(anchorElement: FirBasedSymbol<*>): List<FirAnnotation> {
+    // NB: annotation argument mapping (w/ vararg) are built/replaced during call completion, hence BODY_RESOLVE.
+    // TODO(KT-53371): optimize ARGUMENTS_OF_ANNOTATIONS to build annotation argument mapping too.
+    // TODO(KT-53519): Even with BODY_RESOLVE, argument mapping for annotations on [FirValueParameter] is not properly built.
+    anchorElement.lazyResolveToPhase(FirResolvePhase.BODY_RESOLVE)
+    return annotations
+}
+
+fun FirAnnotationContainer.resolvedAnnotationsWithClassIds(anchorElement: FirBasedSymbol<*>): List<FirAnnotation> {
+    anchorElement.lazyResolveToPhase(FirResolvePhase.TYPES)
+    return annotations
+}
+
+fun FirAnnotationContainer.resolvedAnnotationClassIds(anchorElement: FirBasedSymbol<*>): List<ClassId> {
+    anchorElement.lazyResolveToPhase(FirResolvePhase.TYPES)
+    return annotations.mapNotNull { (it.annotationTypeRef.coneType as? ConeClassLikeType)?.lookupTag?.classId }
 }
 
 @RequiresOptIn
