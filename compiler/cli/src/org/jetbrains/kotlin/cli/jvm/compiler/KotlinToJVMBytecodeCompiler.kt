@@ -125,7 +125,7 @@ object KotlinToJVMBytecodeCompiler {
             outputs += runCodegen(input, input.state, codegenFactory, result.bindingContext, diagnosticsReporter, environment.configuration)
         }
 
-        return writeOutputs(environment.project, projectConfiguration, chunk, outputs, mainClassFqName)
+        return writeOutputsIfNeeded(environment.project, projectConfiguration, chunk, outputs, mainClassFqName)
     }
 
     fun compileBunchOfSources(environment: KotlinCoreEnvironment): Boolean {
