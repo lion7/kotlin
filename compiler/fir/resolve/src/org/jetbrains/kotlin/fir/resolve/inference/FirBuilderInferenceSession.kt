@@ -241,7 +241,7 @@ class FirBuilderInferenceSession(
         lambda.transformSingle(stubTypeSubstitutor, null)
 
         for (receiver in lambdaImplicitReceivers) {
-            receiver.replaceType(substitutor.substituteOrSelf(receiver.type))
+            receiver.updateTypeWithSubstitutor(substitutor)
         }
 
         // TODO: support diagnostics, see [CoroutineInferenceSession#updateCalls]

@@ -19,17 +19,14 @@ import org.jetbrains.kotlin.fir.resolve.ScopeSession
 import org.jetbrains.kotlin.fir.resolve.constructType
 import org.jetbrains.kotlin.fir.resolve.scope
 import org.jetbrains.kotlin.fir.resolve.smartcastScope
-import org.jetbrains.kotlin.fir.resolvedTypeFromPrototype
+import org.jetbrains.kotlin.fir.resolve.substitution.ConeSubstitutor
 import org.jetbrains.kotlin.fir.scopes.FakeOverrideTypeCalculator
 import org.jetbrains.kotlin.fir.scopes.FirTypeScope
 import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
-import org.jetbrains.kotlin.fir.types.ConeErrorType
-import org.jetbrains.kotlin.fir.types.ConeKotlinType
+import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.fir.types.builder.buildResolvedTypeRef
-import org.jetbrains.kotlin.fir.types.coneType
-import org.jetbrains.kotlin.fir.types.coneTypeSafe
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.types.SmartcastStability
 
@@ -89,9 +86,10 @@ sealed class ImplicitReceiverValue<S : FirBasedSymbol<*>>(
 
     abstract val isContextReceiver: Boolean
 
-    val originalType: ConeKotlinType = type
+    var originalType: ConeKotlinType = type
+        private set
 
-    var implicitScope: FirTypeScope? = type.scope(useSiteSession, scopeSession, FakeOverrideTypeCalculator.DoNothing)
+    var implicitScope: FirTypeScope? = createImplicitScope()
         private set
 
     override fun scope(useSiteSession: FirSession, scopeSession: ScopeSession): FirTypeScope? = implicitScope
@@ -100,16 +98,39 @@ sealed class ImplicitReceiverValue<S : FirBasedSymbol<*>>(
     final override var receiverExpression: FirExpression = originalReceiverExpression
         private set
 
-    /*
+    private var hasSmartcast: Boolean = false
+
+    /**
+     * Should be called only from builder inference session
+     */
+    fun updateTypeWithSubstitutor(substitutor: ConeSubstitutor) {
+        if (!mutable) throw IllegalStateException("Cannot mutate an immutable ImplicitReceiverValue")
+        val newType = substitutor.substituteOrNull(type) ?: return
+        val newOriginalType = substitutor.substituteOrSelf(originalType)
+        originalReceiverExpression.replaceTypeRef(originalReceiverExpression.typeRef.withReplacedConeType(newType))
+        originalType = newOriginalType
+
+        if (hasSmartcast) {
+            updateTypeFromSmartcast(newType)
+        } else {
+            assert(receiverExpression === originalReceiverExpression)
+            type = newType
+            implicitScope = createImplicitScope()
+        }
+    }
+
+    /**
      * Should be called only in ImplicitReceiverStack
      */
-    fun replaceType(type: ConeKotlinType) {
+    fun updateTypeFromSmartcast(type: ConeKotlinType) {
         if (type == this.type) return
         if (!mutable) throw IllegalStateException("Cannot mutate an immutable ImplicitReceiverValue")
         this.type = type
         receiverExpression = if (type == originalReceiverExpression.typeRef.coneType) {
+            hasSmartcast = false
             originalReceiverExpression
         } else {
+            hasSmartcast = true
             buildSmartCastExpression {
                 originalExpression = originalReceiverExpression
                 this.source = originalExpression.source?.fakeElement(KtFakeSourceElementKind.SmartCastExpression)
@@ -122,7 +143,11 @@ sealed class ImplicitReceiverValue<S : FirBasedSymbol<*>>(
                 typeRef = smartcastType.copyWithNewSourceKind(KtFakeSourceElementKind.ImplicitTypeRef)
             }
         }
-        implicitScope = type.scope(useSiteSession, scopeSession, FakeOverrideTypeCalculator.DoNothing)
+        implicitScope = createImplicitScope()
+    }
+
+    private fun createImplicitScope(): FirTypeScope? {
+        return type.scope(useSiteSession, scopeSession, FakeOverrideTypeCalculator.DoNothing)
     }
 
     abstract fun createSnapshot(): ImplicitReceiverValue<S>

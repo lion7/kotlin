@@ -102,7 +102,7 @@ class PersistentImplicitReceiverStack private constructor(
     // But it's ok since DFA handles everything properly yet, but still may be it should be rewritten somehow
     fun replaceReceiverType(index: Int, type: ConeKotlinType) {
         assert(index >= 0 && index < stack.size)
-        stack[index].replaceType(type)
+        stack[index].updateTypeFromSmartcast(type)
     }
 
     fun createSnapshot(): PersistentImplicitReceiverStack {
