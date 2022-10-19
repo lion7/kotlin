@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.codegen.state.extractTypeMappingModeFromAnnotation
 import org.jetbrains.kotlin.codegen.state.isMethodWithDeclarationSiteWildcardsFqName
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
+import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.lazy.IrLazyClass
 import org.jetbrains.kotlin.ir.declarations.lazy.IrLazyFunctionBase
@@ -174,7 +175,11 @@ class MethodSignatureMapper(private val context: JvmBackendContext, private val 
     private fun mapReturnType(declaration: IrDeclaration, returnType: IrType, sw: JvmSignatureWriter?): Type {
         val isAnnotationMethod = declaration.parent.let { it is IrClass && it.isAnnotationClass }
         if (sw == null || sw.skipGenericSignature()) {
-            return typeMapper.mapType(returnType, TypeMappingMode.getModeForReturnTypeNoGeneric(isAnnotationMethod), sw)
+            return typeMapper.mapType(
+                returnType.sealedInlineClassTypeIfNeeded(),
+                TypeMappingMode.getModeForReturnTypeNoGeneric(isAnnotationMethod),
+                sw
+            )
         }
 
         val typeMappingModeFromAnnotation =
@@ -187,8 +192,14 @@ class MethodSignatureMapper(private val context: JvmBackendContext, private val 
 
         val mappingMode = typeSystem.getOptimalModeForReturnType(returnType, isAnnotationMethod)
 
-        return typeMapper.mapType(returnType, mappingMode, sw)
+        return typeMapper.mapType(returnType.sealedInlineClassTypeIfNeeded(), mappingMode, sw)
     }
+
+    private fun IrType.sealedInlineClassTypeIfNeeded(): IrType =
+        if (isInlineChildOfSealedInlineClass() && isNullable() &&
+            classOrNull?.owner?.inlineClassRepresentation?.underlyingType?.isNullable() == true // includes primitives
+        ) findTopSealedInlineSuperClass().defaultType.makeNullable()
+        else this
 
     private fun hasVoidReturnType(function: IrFunction): Boolean =
         function is IrConstructor || (function.returnType.isUnit() && !function.isGetter)
@@ -212,7 +223,7 @@ class MethodSignatureMapper(private val context: JvmBackendContext, private val 
     }
 
     private fun isBoxMethodForInlineClass(function: IrFunction): Boolean =
-        function.parent.let { it is IrClass && it.isSingleFieldValueClass } &&
+        function.parent.let { it is IrClass && it.isInlineOrSealedInline} &&
                 function.origin == JvmLoweredDeclarationOrigin.SYNTHETIC_INLINE_CLASS_MEMBER &&
                 function.name.asString() == "box-impl"
 
@@ -341,7 +352,7 @@ class MethodSignatureMapper(private val context: JvmBackendContext, private val 
             if (type.isInlineClassType() && declaration.isFromJava()) {
                 typeMapper.mapType(type, TypeMappingMode.GENERIC_ARGUMENT, sw)
             } else {
-                typeMapper.mapType(type, TypeMappingMode.DEFAULT, sw)
+                typeMapper.mapType(type.sealedInlineClassTypeIfNeeded(), TypeMappingMode.DEFAULT, sw)
             }
             return
         }
@@ -357,7 +368,7 @@ class MethodSignatureMapper(private val context: JvmBackendContext, private val 
                 }
         }
 
-        typeMapper.mapType(type, mode, sw)
+        typeMapper.mapType(type.sealedInlineClassTypeIfNeeded(), mode, sw)
     }
 
     private val IrDeclaration.isMethodWithDeclarationSiteWildcards: Boolean
@@ -386,12 +397,26 @@ class MethodSignatureMapper(private val context: JvmBackendContext, private val 
     // TODO get rid of 'caller' argument
     fun mapToCallableMethod(expression: IrCall, caller: IrFunction?): IrCallableMethod {
         val callee = expression.symbol.owner
-        val calleeParent = expression.superQualifierSymbol?.owner
+        var calleeParent = expression.superQualifierSymbol?.owner
             ?: expression.dispatchReceiver?.type?.classOrNull?.owner?.let {
                 // Calling Object class methods on interfaces is permitted, but they're not interface methods.
                 if (it.isJvmInterface && callee.isMethodOfAny()) context.irBuiltIns.anyClass.owner else it
             }
             ?: callee.parentAsClass // Static call or type parameter
+
+        val calleeInSealedInlineClassTop = calleeParent.isChildOfSealedInlineClass() &&
+                caller?.isMethodImplOfTopSealedInlineClassCallingChild(callee) == false &&
+                (callee.origin == JvmLoweredDeclarationOrigin.STATIC_INLINE_CLASS_REPLACEMENT ||
+                        (callee.isFakeOverride && callee.overriddenSymbols.any {
+                            it.owner.parentAsClass.let { parent ->
+                                parent.isInlineOrSealedInline || parent.isInterface
+                            } && it.owner.modality != Modality.ABSTRACT
+                        }))
+
+        if (calleeInSealedInlineClassTop) {
+            calleeParent = calleeParent.defaultType.findTopSealedInlineSuperClass()
+        }
+
         val owner = typeMapper.mapOwner(calleeParent)
 
         val isInterface = calleeParent.isJvmInterface
@@ -405,7 +430,16 @@ class MethodSignatureMapper(private val context: JvmBackendContext, private val 
             else -> Opcodes.INVOKEVIRTUAL
         }
 
-        val declaration = findSuperDeclaration(callee, isSuperCall)
+        var declaration = findSuperDeclaration(callee, isSuperCall)
+
+        if (calleeInSealedInlineClassTop) {
+            while (declaration.parentAsClass != calleeParent && !calleeParent.isSubclassOf(declaration.parentAsClass)) {
+                declaration = declaration.overriddenSymbols.find { it.owner.parentAsClass == calleeParent }?.owner
+                    ?: declaration.overriddenSymbols.find { it.owner.parentAsClass.isSealedInline }?.owner
+                            ?: error("Cannot find overridden of ${declaration.render()}")
+            }
+        }
+
         val signature =
             if (caller != null && caller.isBridge()) {
                 // Do not remap special builtin methods when called from a bridge. The bridges are there to provide the
@@ -535,4 +569,18 @@ class MethodSignatureMapper(private val context: JvmBackendContext, private val 
             else ->
                 Opcodes.H_INVOKEVIRTUAL
         }
+}
+
+private fun IrFunction.isMethodImplOfTopSealedInlineClassCallingChild(callee: IrSimpleFunction): Boolean {
+    if (!parentAsClass.isSealedInline) return false
+    if (parentAsClass.isChildOfSealedInlineClass()) return false
+
+    if (callee.overriddenSymbols.any { it.owner == this }) return true
+
+    var current: IrSimpleFunction? = callee
+    while (current != null && current != this) {
+        current = current.overriddenSymbols.find { it.owner.parentAsClass.isSealedInline }?.owner
+    }
+
+    return current != null
 }

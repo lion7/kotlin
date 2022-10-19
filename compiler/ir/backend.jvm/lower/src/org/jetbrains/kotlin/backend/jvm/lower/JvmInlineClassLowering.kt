@@ -5,30 +5,35 @@
 
 package org.jetbrains.kotlin.backend.jvm.lower
 
-import org.jetbrains.kotlin.backend.common.lower.createIrBuilder
-import org.jetbrains.kotlin.backend.common.lower.irBlockBody
+import org.jetbrains.kotlin.backend.common.lower.MethodsFromAnyGeneratorForLowerings.Companion.isEquals
+import org.jetbrains.kotlin.backend.common.lower.*
 import org.jetbrains.kotlin.backend.common.lower.loops.forLoopsPhase
 import org.jetbrains.kotlin.backend.common.phaser.makeIrFilePhase
+import org.jetbrains.kotlin.backend.common.pop
+import org.jetbrains.kotlin.backend.common.push
 import org.jetbrains.kotlin.backend.jvm.*
-import org.jetbrains.kotlin.backend.jvm.ir.erasedUpperBound
+import org.jetbrains.kotlin.backend.jvm.ir.*
 import org.jetbrains.kotlin.builtins.StandardNames
 import org.jetbrains.kotlin.config.ApiVersion
+import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
+import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.*
-import org.jetbrains.kotlin.ir.builders.declarations.addConstructor
-import org.jetbrains.kotlin.ir.builders.declarations.buildFun
+import org.jetbrains.kotlin.ir.builders.declarations.*
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.*
-import org.jetbrains.kotlin.ir.symbols.IrValueSymbol
+import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.transformStatement
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
+import org.jetbrains.kotlin.load.java.JvmAbi
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.util.OperatorNameConventions.EQUALS
+import org.jetbrains.kotlin.utils.addToStdlib.popLast
 
 val jvmInlineClassPhase = makeIrFilePhase(
     ::JvmInlineClassLowering,
@@ -64,6 +69,181 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
     }
 
     override fun IrClass.isSpecificLoweringLogicApplicable(): Boolean = isSingleFieldValueClass || isSealedInline
+
+    private fun buildAdditionalMethodsForSealedInlineClass(declaration: IrClass, constructor: IrConstructor) {
+        if (declaration.isChildOfSealedInlineClass() && declaration.isInlineOrSealedInline) {
+            if (!declaration.isSealedInline) {
+                updateGetterForSealedInlineClassChild(declaration, declaration.defaultType.findTopSealedInlineSuperClass())
+            }
+            rewriteConstructorForSealedInlineClassChild(declaration, declaration.sealedInlineClassParent(), constructor)
+        }
+
+        if (declaration.isSealedInline && !declaration.isChildOfSealedInlineClass()) {
+            buildPrimaryInlineClassConstructor(declaration, constructor)
+            buildBoxFunction(declaration)
+            buildUnboxFunction(declaration)
+
+            patchReceiverParameterOfValueGetter(declaration)
+
+        }
+    }
+
+
+    private fun rewriteConstructorForSealedInlineClassChild(irClass: IrClass, parent: IrClass, irConstructor: IrConstructor) {
+        val toCall =
+            parent.functions.find { it.origin == JvmLoweredDeclarationOrigin.PRIMARY_CONSTRUCTOR_FOR_SEALED_INLINE_CLASS }
+                ?: context.inlineClassReplacements.getReplacementFunction(
+                    parent.primaryConstructor
+                        ?: parent.constructors.find { it.origin == JvmLoweredDeclarationOrigin.PRIMARY_CONSTRUCTOR_FOR_SEALED_INLINE_CLASS }!!
+                )!!
+        val newConstructor = context.inlineClassReplacements.getReplacementFunction(irConstructor)!!
+
+        with(context.createIrBuilder(newConstructor.symbol)) {
+            newConstructor.body = irBlockBody {
+                val res = irTemporary(
+                    irCall(toCall.symbol).apply {
+                        putValueArgument(0, irGet(newConstructor.valueParameters[0]))
+                    }
+                )
+                moveInitBlocksInto(irClass, newConstructor)
+                +irReturn(irGet(res))
+            }
+        }
+
+        irClass.addMember(newConstructor)
+    }
+
+    private fun IrClass.sealedInlineClassParent(): IrClass =
+        superTypes.single { it.isInlineClassType() }.classOrNull!!.owner
+
+    private fun patchReceiverParameterOfValueGetter(irClass: IrClass) {
+        val getter = irClass.functions.single { it.origin == IrDeclarationOrigin.GETTER_OF_SEALED_INLINE_CLASS_FIELD }
+        getter.dispatchReceiverParameter = irClass.thisReceiver?.copyTo(getter, type = irClass.defaultType)
+
+        val field = irClass.fields.single { it.origin == IrDeclarationOrigin.FIELD_FOR_SEALED_INLINE_CLASS }
+
+        with(context.createIrBuilder(getter.symbol)) {
+            getter.body = irExprBody(
+                irGetField(irGet(getter.dispatchReceiverParameter!!), field)
+            )
+        }
+    }
+
+    // For sealed inline class children we generate getter, which simply calls parent's and casts the result.
+    private fun updateGetterForSealedInlineClassChild(irClass: IrClass, top: IrClass) {
+        val fieldGetter = irClass.functions.find { it.isInlineClassFieldGetter }
+            ?: error("${irClass.render()} has no getter")
+
+        val methodToOverride = top.functions.single { it.origin == IrDeclarationOrigin.GETTER_OF_SEALED_INLINE_CLASS_FIELD }
+
+        require(
+            methodToOverride.origin == IrDeclarationOrigin.FAKE_OVERRIDE ||
+                    methodToOverride.origin == IrDeclarationOrigin.GETTER_OF_SEALED_INLINE_CLASS_FIELD
+        )
+
+        val fakeOverride = irClass.addFunction {
+            name = methodToOverride.name
+            returnType = methodToOverride.returnType
+            updateFrom(methodToOverride)
+            origin = IrDeclarationOrigin.FAKE_OVERRIDE
+            isFakeOverride = true
+        }
+
+        fakeOverride.overriddenSymbols += methodToOverride.symbol
+        fakeOverride.dispatchReceiverParameter = irClass.thisReceiver?.copyTo(fakeOverride, type = irClass.defaultType)
+
+        with(context.createIrBuilder(fieldGetter.symbol)) {
+            fieldGetter.body = irExprBody(
+                irCall(fakeOverride.symbol).apply {
+                    dispatchReceiver = irGet(fieldGetter.dispatchReceiverParameter!!)
+                }
+            )
+        }
+
+        // Remove the field, generated by IR generator
+        irClass.declarations.removeIf { it is IrField }
+    }
+
+    private fun IrClass.isChildOfSealedInlineClass(): Boolean = superTypes.any { it.isInlineClassType() }
+
+    private fun IrClass.isSealedInlineClassOrItsChild(): Boolean = isSealedInline || isChildOfSealedInlineClass()
+
+    override fun transformSimpleFunctionFlat(function: IrSimpleFunction, replacement: IrSimpleFunction): List<IrDeclaration> {
+        if (function.modality == Modality.ABSTRACT && function.parentAsClass.isSealedInlineClassOrItsChild()) {
+            return emptyList()
+        }
+
+        if (function.isFakeOverride) {
+            if (function.parentAsClass.isChildOfSealedInlineClass()) {
+                return listOf(function)
+            } else if (function.parentAsClass.isSealedInline) {
+                if (function.isFakeOverrideOfDefaultMethod() &&
+                    (function.overriddenInChildren() ||
+                            context.state.jvmDefaultMode.isEnabled && context.state.jvmDefaultMode.forAllMethodsWithBody)
+                ) {
+                    return listOf(function)
+                }
+            }
+        }
+
+        for (parameter in replacement.valueParameters) {
+            parameter.transformChildrenVoid()
+            parameter.defaultValue?.patchDeclarationParents(replacement)
+        }
+
+        allScopes.push(createScope(function))
+        replacement.body = function.body?.transform(this, null)?.patchDeclarationParents(replacement)
+        allScopes.pop()
+        replacement.copyAttributes(function)
+
+        // Don't create a wrapper for functions which are only used in an unboxed context
+        // However, sealed inline classes do have overrides.
+        if ((function.overriddenSymbols.isEmpty() || replacement.dispatchReceiverParameter != null) &&
+            !function.parentAsClass.isSealedInline
+        ) return listOf(replacement)
+
+        val bridgeFunction = createBridgeDeclaration(
+            function,
+            when {
+                // If the original function has signature which need mangling we still need to replace it with a mangled version.
+                (!function.isFakeOverride || function.findInterfaceImplementation(context.state.jvmDefaultMode) != null) &&
+                        function.signatureRequiresMangling() ->
+                    replacement.name
+                // Since we remove the corresponding property symbol from the bridge we need to resolve getter/setter
+                // names at this point.
+                replacement.isGetter ->
+                    Name.identifier(JvmAbi.getterName(replacement.correspondingPropertySymbol!!.owner.name.asString()))
+
+                replacement.isSetter ->
+                    Name.identifier(JvmAbi.setterName(replacement.correspondingPropertySymbol!!.owner.name.asString()))
+
+                else ->
+                    function.name
+            }
+        )
+
+        // Update the overridden symbols to point to their inline class replacements
+        bridgeFunction.overriddenSymbols = replacement.overriddenSymbols
+
+        val overriddenFromSealedInline = replacement.overriddenSymbols.find { overridden ->
+            overridden.owner.parent.let { it is IrClass && it.isSealedInline }
+        }
+
+        // Replace the function body with a wrapper
+        if (!bridgeFunction.isFakeOverride || !bridgeFunction.parentAsClass.isInlineOrSealedInline) {
+            createBridgeBody(bridgeFunction, replacement)
+        } else if (overriddenFromSealedInline != null) {
+            // If fake override overrides function from sealed inline class, call the overridden function
+            createBridgeBody(replacement, overriddenFromSealedInline.owner)
+            // However, if the fake override is overridden, generate when in it, calling its children.
+        } else {
+            // Fake overrides redirect from the replacement to the original function, which is in turn replaced during interfacePhase.
+            createBridgeBody(replacement, bridgeFunction)
+        }
+
+        return listOf(replacement, bridgeFunction)
+    }
+
     override fun createBridgeDeclaration(source: IrSimpleFunction, replacement: IrSimpleFunction, mangledName: Name): IrSimpleFunction =
         context.irFactory.buildFun {
             updateFrom(source)
@@ -79,6 +259,28 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
             copyAttributes(source)
         }
 
+
+    private fun IrSimpleFunction.signatureRequiresMangling() =
+        fullValueParameterList.any { it.type.getRequiresMangling() } ||
+                context.state.functionsWithInlineClassReturnTypesMangled && returnType.getRequiresMangling()
+
+    // We may need to add a bridge method for inline class methods with static replacements. Ideally, we'd do this in BridgeLowering,
+    // but unfortunately this is a special case in the old backend. The bridge method is not marked as such and does not follow the normal
+    // visibility rules for bridge methods.
+    private fun createBridgeDeclaration(source: IrSimpleFunction, mangledName: Name) =
+        context.irFactory.buildFun {
+            updateFrom(source)
+            name = mangledName
+            returnType = source.returnType
+        }.apply {
+            copyParameterDeclarationsFrom(source)
+            annotations = source.annotations
+            parent = source.parent
+            // We need to ensure that this bridge has the same attribute owner as its static inline class replacement, since this
+            // is used in [CoroutineCodegen.isStaticInlineClassReplacementDelegatingCall] to identify the bridge and avoid generating
+            // a continuation class.
+            copyAttributes(source)
+        }
 
     override val specificMangle: SpecificMangle
         get() = SpecificMangle.Inline
@@ -109,12 +311,18 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
     }
 
     override fun handleSpecificNewClass(declaration: IrClass) {
+        require(!declaration.isSealedInlineClassOrItsChild())
+
         val irConstructor = declaration.primaryConstructor!!
+
         // The field getter is used by reflection and cannot be removed here unless it is internal.
         declaration.declarations.removeIf {
-            it == irConstructor || (it is IrFunction && it.isInlineClassFieldGetter && !it.visibility.isPublicAPI)
+            (it == irConstructor && declaration.modality != Modality.SEALED) ||
+                    (it is IrFunction && it.isInlineClassFieldGetter && !it.visibility.isPublicAPI)
         }
+
         buildPrimaryInlineClassConstructor(declaration, irConstructor)
+        // For sealed inline class subclasses boxing and unboxing is done via top's box-impl and unbox-impl
         buildBoxFunction(declaration)
         buildUnboxFunction(declaration)
         buildSpecializedEqualsMethod(declaration)
@@ -326,6 +534,12 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
         }
     }
 
+    private fun unboxInlineClass(type: IrType): IrType? {
+        val irClass = type.classOrNull?.owner ?: return null
+        return if (irClass.isSealedInline) context.irBuiltIns.anyNType
+        else type.unboxInlineClass()
+    }
+
     override fun visitCall(expression: IrCall): IrExpression =
         when {
             // Getting the underlying field of an inline class merely changes the IR type,
@@ -370,9 +584,12 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
             field.name == parent.inlineClassFieldName
         ) {
             val receiver = expression.receiver!!.transform(this, null)
+            val type =
+                if (field.parentAsClass.isChildOfSealedInlineClass() && field.type.isPrimitiveType()) field.type.makeNullable()
+                else field.type
             // If we get the field of nullable variable, we can be sure, that type is not null,
             // since we first generate null check.
-            return coerceInlineClasses(receiver, receiver.type.makeNotNull(), field.type)
+            return coerceInlineClasses(receiver, receiver.type.makeNotNull(), type)
         }
         return super.visitGetField(expression)
     }
@@ -403,16 +620,27 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
         // Add the default primary constructor
         valueClass.addConstructor {
             updateFrom(irConstructor)
-            visibility = DescriptorVisibilities.PRIVATE
-            origin = JvmLoweredDeclarationOrigin.SYNTHETIC_INLINE_CLASS_MEMBER
+            visibility = if (valueClass.isSealedInline) DescriptorVisibilities.PROTECTED else DescriptorVisibilities.PRIVATE
+            origin =
+                if (valueClass.isSealedInline) JvmLoweredDeclarationOrigin.PRIMARY_CONSTRUCTOR_FOR_SEALED_INLINE_CLASS
+                else JvmLoweredDeclarationOrigin.SYNTHETIC_INLINE_CLASS_MEMBER
             returnType = irConstructor.returnType
         }.apply {
+            if (valueClass.isSealedInline) {
+                addValueParameter(
+                    InlineClassAbi.sealedInlineClassFieldName,
+                    context.irBuiltIns.anyNType,
+                    JvmLoweredDeclarationOrigin.PRIMARY_CONSTRUCTOR_PARAMETER_FOR_SEALED_INLINE_CLASS
+                )
+            }
             // Don't create a default argument stub for the primary constructor
             irConstructor.valueParameters.forEach { it.defaultValue = null }
             copyParameterDeclarationsFrom(irConstructor)
             annotations = irConstructor.annotations
             body = context.createIrBuilder(this.symbol).irBlockBody(this) {
-                +irDelegatingConstructorCall(context.irBuiltIns.anyClass.owner.constructors.single())
+                +irDelegatingConstructorCall(valueClass.superTypes.singleOrNull {
+                    it.classOrNull?.owner?.kind == ClassKind.CLASS
+                }?.classOrNull?.constructors?.singleOrNull()?.owner ?: context.irBuiltIns.anyClass.owner.constructors.single())
                 +irSetField(
                     irGet(valueClass.thisReceiver!!),
                     getInlineClassBackingField(valueClass),
@@ -425,30 +653,44 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
         // null-checks, default arguments, and anonymous initializers.
         val function = context.inlineClassReplacements.getReplacementFunction(irConstructor)!!
 
-        val initBlocks = valueClass.declarations.filterIsInstance<IrAnonymousInitializer>()
-
         function.valueParameters.forEach { it.transformChildrenVoid() }
         function.body = context.createIrBuilder(function.symbol).irBlockBody {
             val argument = function.valueParameters[0]
             val thisValue = irTemporary(coerceInlineClasses(irGet(argument), argument.type, function.returnType, skipCast = true))
             valueMap[valueClass.thisReceiver!!.symbol] = thisValue
-            for (initBlock in initBlocks) {
-                for (stmt in initBlock.body.statements) {
-                    +stmt.transformStatement(this@JvmInlineClassLowering).patchDeclarationParents(function)
-                }
-            }
+            moveInitBlocksInto(valueClass, function)
             +irReturn(irGet(thisValue))
         }
 
-        valueClass.declarations.removeAll(initBlocks)
         valueClass.declarations += function
+    }
+
+    private fun IrBlockBodyBuilder.moveInitBlocksInto(
+        irClass: IrClass,
+        function: IrSimpleFunction
+    ) {
+        val initBlocks = irClass.declarations.filterIsInstance<IrAnonymousInitializer>()
+        for (initBlock in initBlocks) {
+            for (stmt in initBlock.body.statements) {
+                +stmt.transformStatement(this@JvmInlineClassLowering).patchDeclarationParents(function)
+            }
+        }
+        irClass.declarations.removeAll(initBlocks)
     }
 
     fun buildBoxFunction(valueClass: IrClass) {
         val function = context.inlineClassReplacements.getBoxFunction(valueClass)
+
+        val primaryConstructor =
+            if (valueClass.isSealedInline) {
+                valueClass.declarations.single {
+                    it is IrConstructor && it.origin == JvmLoweredDeclarationOrigin.PRIMARY_CONSTRUCTOR_FOR_SEALED_INLINE_CLASS
+                } as IrConstructor
+            } else valueClass.primaryConstructor!!
+
         with(context.createIrBuilder(function.symbol)) {
             function.body = irExprBody(
-                irCall(valueClass.primaryConstructor!!.symbol).apply {
+                irCall(primaryConstructor.symbol).apply {
                     passTypeArgumentsFrom(function)
                     putValueArgument(0, irGet(function.valueParameters[0]))
                 }
@@ -457,13 +699,19 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
         valueClass.declarations += function
     }
 
+
+    private fun coerceFromSealedInlineClass(top: IrClass, expr: IrExpression): IrExpression =
+        coerceInlineClasses(expr, top.defaultType, context.irBuiltIns.anyNType)
+
+    private fun coerceToSealedInlineClass(expr: IrExpression, top: IrClass): IrExpression =
+        coerceInlineClasses(expr, context.irBuiltIns.anyNType, top.defaultType)
+
     private fun buildUnboxFunction(irClass: IrClass) {
         val function = context.inlineClassReplacements.getUnboxFunction(irClass)
         val field = getInlineClassBackingField(irClass)
 
-        function.body = context.createIrBuilder(function.symbol).irBlockBody {
-            val thisVal = irGet(function.dispatchReceiverParameter!!)
-            +irReturn(irGetField(thisVal, field))
+        function.body = with(context.createIrBuilder(function.symbol)) {
+            irExprBody(irGetField(irGet(function.dispatchReceiverParameter!!), field))
         }
 
         irClass.declarations += function
@@ -478,7 +726,7 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
         val typedEqualsStaticReplacement = findStaticReplacementForTypedEquals(valueClass)
         val untypedEquals = valueClass.functions.single { it.overridesEqualsFromAny }
 
-        function.body = context.createIrBuilder(valueClass.symbol).run {
+        function.body = with(context.createIrBuilder(valueClass.symbol)) {
             irExprBody(
                 if (typedEqualsStaticReplacement == null) {
                     if (untypedEquals.origin == IrDeclarationOrigin.DEFINED) {
@@ -517,3 +765,5 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
             .singleOrNull { context.inlineClassReplacements.originalFunctionForStaticReplacement[it]?.run { isTypedEquals(this) } ?: false }
     }
 }
+
+internal fun IrClass.isChildOfSealedInlineClass(): Boolean = superTypes.any { it.isInlineClassType() }

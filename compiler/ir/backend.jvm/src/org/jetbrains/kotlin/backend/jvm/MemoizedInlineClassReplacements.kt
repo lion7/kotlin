@@ -5,10 +5,7 @@
 
 package org.jetbrains.kotlin.backend.jvm
 
-import org.jetbrains.kotlin.backend.jvm.ir.classFileContainsMethod
-import org.jetbrains.kotlin.backend.jvm.ir.extensionReceiverName
-import org.jetbrains.kotlin.backend.jvm.ir.isStaticValueClassReplacement
-import org.jetbrains.kotlin.backend.jvm.ir.parentClassId
+import org.jetbrains.kotlin.backend.jvm.ir.*
 import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.Modality
@@ -17,6 +14,8 @@ import org.jetbrains.kotlin.ir.builders.declarations.addValueParameter
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
+import org.jetbrains.kotlin.ir.symbols.impl.IrValueParameterSymbolImpl
+import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
 import org.jetbrains.kotlin.ir.types.impl.IrStarProjectionImpl
 import org.jetbrains.kotlin.ir.util.*
@@ -46,6 +45,14 @@ class MemoizedInlineClassReplacements(
     override val getReplacementFunction: (IrFunction) -> IrSimpleFunction? =
         storageManager.createMemoizedFunctionWithNullableValues {
             when {
+                // Generate constructor-impl for sealed inline classes with a parameter
+                it is IrConstructor && it.parentAsClass.isSealedInline ->
+                    createStaticReplacementForSealedInlineClassConstructor(it)
+
+                // Do not update sealed inline class value getter
+                it.origin == IrDeclarationOrigin.GETTER_OF_SEALED_INLINE_CLASS_FIELD -> null
+                it.origin == IrDeclarationOrigin.FAKE_OVERRIDE && it.name == InlineClassAbi.sealedInlineClassFieldGetterName -> null
+
                 // Don't mangle anonymous or synthetic functions, except for generated SAM wrapper methods
                 (it.isLocal && it is IrSimpleFunction && it.overriddenSymbols.isEmpty()) ||
                         (it.origin == IrDeclarationOrigin.DELEGATED_PROPERTY_ACCESSOR && it.visibility == DescriptorVisibilities.LOCAL) ||
@@ -83,6 +90,16 @@ class MemoizedInlineClassReplacements(
             }
         }
 
+    private fun createStaticReplacementForSealedInlineClassConstructor(constructor: IrConstructor): IrSimpleFunction =
+        buildReplacement(constructor, JvmLoweredDeclarationOrigin.PRIMARY_CONSTRUCTOR_FOR_SEALED_INLINE_CLASS, noFakeOverride = true) {
+            valueParameters = emptyList()
+            addValueParameter(
+                InlineClassAbi.sealedInlineClassFieldName,
+                context.irBuiltIns.anyNType,
+                JvmLoweredDeclarationOrigin.PRIMARY_CONSTRUCTOR_PARAMETER_FOR_SEALED_INLINE_CLASS
+            )
+        }
+
     /**
      * Get the box function for an inline class. Concretely, this is a synthetic
      * static function named "box-impl" which takes an unboxed value and returns
@@ -115,7 +132,10 @@ class MemoizedInlineClassReplacements(
             irFactory.buildFun {
                 name = Name.identifier(KotlinTypeMapper.UNBOX_JVM_METHOD_NAME)
                 origin = JvmLoweredDeclarationOrigin.SYNTHETIC_INLINE_CLASS_MEMBER
-                returnType = irClass.inlineClassRepresentation!!.underlyingType
+                returnType = context.irBuiltIns.getInlineClassUnderlyingType(irClass)
+                if (irClass.modality == Modality.SEALED) {
+                    modality = Modality.OPEN
+                }
             }.apply {
                 parent = irClass
                 createDispatchReceiverParameter()
@@ -141,11 +161,11 @@ class MemoizedInlineClassReplacements(
                     )
                 addValueParameter {
                     name = InlineClassDescriptorResolver.SPECIALIZED_EQUALS_FIRST_PARAMETER_NAME
-                    type = typeArgument
+                    type = argumentType
                 }
                 addValueParameter {
                     name = InlineClassDescriptorResolver.SPECIALIZED_EQUALS_SECOND_PARAMETER_NAME
-                    type = typeArgument
+                    type = argumentType
                 }
             }
         }

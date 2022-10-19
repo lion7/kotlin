@@ -19,25 +19,24 @@ package org.jetbrains.kotlin.psi2ir.generators
 import org.jetbrains.kotlin.backend.common.CodegenUtil
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns
 import org.jetbrains.kotlin.descriptors.*
+import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
+import org.jetbrains.kotlin.ir.builders.declarations.addBackingField
+import org.jetbrains.kotlin.ir.builders.declarations.addGetter
+import org.jetbrains.kotlin.ir.builders.declarations.addProperty
+import org.jetbrains.kotlin.ir.builders.declarations.buildValueParameter
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.descriptors.IrImplementingDelegateDescriptorImpl
-import org.jetbrains.kotlin.ir.expressions.IrBlockBody
-import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
-import org.jetbrains.kotlin.ir.expressions.impl.IrGetFieldImpl
-import org.jetbrains.kotlin.ir.expressions.impl.IrGetValueImpl
-import org.jetbrains.kotlin.ir.expressions.impl.IrReturnImpl
-import org.jetbrains.kotlin.ir.expressions.mapValueParameters
-import org.jetbrains.kotlin.ir.expressions.putTypeArguments
-import org.jetbrains.kotlin.ir.expressions.typeParametersCount
+import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.expressions.impl.*
 import org.jetbrains.kotlin.ir.symbols.impl.IrFieldSymbolImpl
 import org.jetbrains.kotlin.ir.types.IrSimpleType
-import org.jetbrains.kotlin.ir.util.SYNTHETIC_OFFSET
-import org.jetbrains.kotlin.ir.util.createIrClassFromDescriptor
-import org.jetbrains.kotlin.ir.util.declareSimpleFunctionWithOverrides
-import org.jetbrains.kotlin.ir.util.properties
+import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
+import org.jetbrains.kotlin.ir.types.makeNullable
+import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.name.SpecialNames
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtDelegatedSuperTypeEntry
 import org.jetbrains.kotlin.psi.KtEnumEntry
@@ -48,9 +47,9 @@ import org.jetbrains.kotlin.psi.psiUtil.pureStartOffset
 import org.jetbrains.kotlin.psi.psiUtil.startOffsetSkippingComments
 import org.jetbrains.kotlin.psi.synthetics.SyntheticClassOrObjectDescriptor
 import org.jetbrains.kotlin.psi.synthetics.findClassDescriptor
-import org.jetbrains.kotlin.resolve.BindingContext
-import org.jetbrains.kotlin.resolve.DelegationResolver
-import org.jetbrains.kotlin.resolve.DescriptorUtils
+import org.jetbrains.kotlin.resolve.*
+import org.jetbrains.kotlin.resolve.checkers.isSealedInlineClass
+import org.jetbrains.kotlin.resolve.descriptorUtil.getSuperClassOrAny
 import org.jetbrains.kotlin.resolve.descriptorUtil.propertyIfAccessor
 import org.jetbrains.kotlin.resolve.descriptorUtil.setSingleOverridden
 import org.jetbrains.kotlin.resolve.scopes.DescriptorKindFilter
@@ -58,6 +57,8 @@ import org.jetbrains.kotlin.resolve.scopes.MemberScope
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.TypeProjectionImpl
 import org.jetbrains.kotlin.types.TypeSubstitutor
+import org.jetbrains.kotlin.types.typeUtil.isPrimitiveNumberType
+import org.jetbrains.kotlin.utils.addToStdlib.cast
 import org.jetbrains.kotlin.utils.newHashMapWithExpectedSize
 
 @ObsoleteDescriptorBasedAPI
@@ -91,6 +92,10 @@ class ClassGenerator(
                 classDescriptor.thisAsReceiverParameter,
                 classDescriptor.thisAsReceiverParameter.type.toIrType()
             )
+
+            if (classDescriptor.isSealedInlineClass() && !classDescriptor.getSuperClassOrAny().isValueClass()) {
+                generatePropertyForSealedInlineClass(irClass)
+            }
 
             generateFieldsForContextReceivers(irClass, classDescriptor)
 
@@ -144,7 +149,7 @@ class ClassGenerator(
                 generateAdditionalMembersForDataClass(irClass, ktClassOrObject)
             }
 
-            if (irClass.isMultiFieldValueClass && ktClassOrObject is KtClassOrObject) {
+            if (classDescriptor.isMultiFieldValueClass() && ktClassOrObject is KtClassOrObject) {
                 generateAdditionalMembersForMultiFieldValueClasses(irClass, ktClassOrObject)
             }
 
@@ -523,6 +528,30 @@ class ClassGenerator(
             )
             context.additionalDescriptorStorage.put(receiverDescriptor.value, irField)
             irClass.addMember(irField)
+        }
+    }
+
+    private fun generatePropertyForSealedInlineClass(irClass: IrClass) {
+        irClass.addProperty {
+            name = Name.identifier("\$value")
+            origin = IrDeclarationOrigin.FIELD_FOR_SEALED_INLINE_CLASS
+            visibility = DescriptorVisibilities.PROTECTED
+        }.also { irProperty ->
+            irProperty.addBackingField {
+                type = context.irBuiltIns.anyNType
+                origin = IrDeclarationOrigin.FIELD_FOR_SEALED_INLINE_CLASS
+                visibility = DescriptorVisibilities.PROTECTED
+                isFinal = true
+            }
+            irProperty.addGetter {
+                returnType = context.irBuiltIns.anyNType
+                origin = IrDeclarationOrigin.GETTER_OF_SEALED_INLINE_CLASS_FIELD
+                visibility = DescriptorVisibilities.PROTECTED
+            }.also {
+                it.body = IrExpressionBodyImpl(
+                    IrGetFieldImpl(UNDEFINED_OFFSET, UNDEFINED_OFFSET, irProperty.backingField!!.symbol, context.irBuiltIns.anyNType)
+                )
+            }
         }
     }
 
