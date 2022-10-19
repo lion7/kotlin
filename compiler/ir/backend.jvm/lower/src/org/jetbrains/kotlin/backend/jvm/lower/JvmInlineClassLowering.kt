@@ -28,7 +28,6 @@ import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.name.Name
-import org.jetbrains.kotlin.resolve.JVM_INLINE_ANNOTATION_FQ_NAME
 import org.jetbrains.kotlin.util.OperatorNameConventions.EQUALS
 
 val jvmInlineClassPhase = makeIrFilePhase(
@@ -119,17 +118,8 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
         buildBoxFunction(declaration)
         buildUnboxFunction(declaration)
         buildSpecializedEqualsMethod(declaration)
-        addJvmInlineAnnotation(declaration)
     }
 
-    fun addJvmInlineAnnotation(valueClass: IrClass) {
-        if (valueClass.hasAnnotation(JVM_INLINE_ANNOTATION_FQ_NAME)) return
-        val constructor = context.ir.symbols.jvmInlineAnnotation.constructors.first()
-        valueClass.annotations = valueClass.annotations + IrConstructorCallImpl.fromSymbolOwner(
-            constructor.owner.returnType,
-            constructor
-        )
-    }
 
     override fun createBridgeBody(source: IrSimpleFunction, target: IrSimpleFunction, original: IrFunction, inverted: Boolean) {
         source.body = context.createIrBuilder(source.symbol, source.startOffset, source.endOffset).run {

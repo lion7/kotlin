@@ -152,8 +152,51 @@ class ClassGenerator(
                 generateAdditionalMembersForEnumClass(irClass)
             }
 
+            if (classDescriptor.isInline && !classDescriptor.annotations.hasAnnotation(JVM_INLINE_ANNOTATION_FQ_NAME)) {
+                addJvmInlineAnnotation(irClass)
+            }
+
             irClass.sealedSubclasses = classDescriptor.sealedSubclasses.map { context.symbolTable.referenceClass(it) }
         }
+    }
+
+    private fun addJvmInlineAnnotation(irClass: IrClass) {
+        val jvmInlineAnnotationDescriptor =
+            context.moduleDescriptor.resolveClassByFqName(JVM_INLINE_ANNOTATION_FQ_NAME, NoLookupLocation.FROM_BACKEND)
+                ?: error("No stdlib in classpath")
+
+        val irPackageFragment =
+            context.symbolTable.declareExternalPackageFragmentIfNotExists(jvmInlineAnnotationDescriptor.containingDeclaration.cast())
+
+        val jvmInlineAnnotationIrClass = context.symbolTable.declareClassIfNotExists(jvmInlineAnnotationDescriptor) {
+            context.irFactory.createIrClassFromDescriptor(
+                UNDEFINED_OFFSET, UNDEFINED_OFFSET, IrDeclarationOrigin.DEFINED, it, jvmInlineAnnotationDescriptor,
+                context.symbolTable.nameProvider.nameForDeclaration(jvmInlineAnnotationDescriptor), DescriptorVisibilities.PUBLIC,
+                Modality.OPEN
+            ).also { clazz ->
+                clazz.parent = irPackageFragment
+                clazz.thisReceiver = buildValueParameter(clazz) {
+                    name = Name.identifier("\$this")
+                    type = IrSimpleTypeImpl(clazz.symbol, false, emptyList(), emptyList())
+                }
+            }
+        }
+
+        val irType = IrSimpleTypeImpl(jvmInlineAnnotationIrClass.symbol, false, emptyList(), emptyList())
+
+        val constructor = context.symbolTable.declareConstructorIfNotExists(jvmInlineAnnotationDescriptor.constructors.first()) {
+            context.irFactory.createConstructor(
+                UNDEFINED_OFFSET, UNDEFINED_OFFSET, IrDeclarationOrigin.DEFINED, it, SpecialNames.INIT,
+                DescriptorVisibilities.PUBLIC, irType, false, false, true, false
+            ).also { constructor ->
+                constructor.parent = jvmInlineAnnotationIrClass
+            }
+        }
+
+        irClass.annotations = irClass.annotations + IrConstructorCallImpl(
+            UNDEFINED_OFFSET, UNDEFINED_OFFSET,
+            irType, constructor.symbol, 0, 0, 0
+        )
     }
 
     private fun getEffectiveModality(ktClassOrObject: KtPureClassOrObject, classDescriptor: ClassDescriptor): Modality =
