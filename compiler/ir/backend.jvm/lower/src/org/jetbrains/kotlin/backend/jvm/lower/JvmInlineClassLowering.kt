@@ -64,6 +64,7 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
         }
     }
 
+    override fun IrClass.isSpecificLoweringLogicApplicable(): Boolean = isSingleFieldValueClass || isSealedInline
     override fun createBridgeDeclaration(source: IrSimpleFunction, replacement: IrSimpleFunction, mangledName: Name): IrSimpleFunction =
         context.irFactory.buildFun {
             updateFrom(source)
@@ -79,7 +80,6 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
             copyAttributes(source)
         }
 
-    override fun IrClass.isSpecificLoweringLogicApplicable(): Boolean = isSingleFieldValueClass
 
     override val specificMangle: SpecificMangle
         get() = SpecificMangle.Inline
@@ -282,8 +282,8 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
             return null
 
         // We don't specialize calls when both arguments are boxed.
-        val leftIsUnboxed = left.type.unboxInlineClass() != left.type
-        val rightIsUnboxed = right.type.unboxInlineClass() != right.type
+        val leftIsUnboxed = unboxInlineClass(left.type) != left.type
+        val rightIsUnboxed = unboxInlineClass(right.type) != right.type
         if (!leftIsUnboxed && !rightIsUnboxed)
             return null
 
@@ -363,7 +363,7 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
             if (symbol != context.irBuiltIns.eqeqSymbol)
                 return false
 
-            val leftClass = getValueArgument(0)?.type?.classOrNull?.owner?.takeIf { it.isSingleFieldValueClass }
+            val leftClass = getValueArgument(0)?.type?.classOrNull?.owner?.takeIf { it.isInline || it.isSealedInline }
                 ?: return false
 
             // Before version 1.4, we cannot rely on the Result.equals-impl0 method
@@ -376,7 +376,7 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
         val parent = field.parent
         if (field.origin == IrDeclarationOrigin.PROPERTY_BACKING_FIELD &&
             parent is IrClass &&
-            parent.isSingleFieldValueClass &&
+            parent.isInline &&
             field.name == parent.inlineClassFieldName
         ) {
             val receiver = expression.receiver!!.transform(this, null)

@@ -62,7 +62,7 @@ class MemoizedInlineClassReplacements(
                         null
 
                 // Mangle all functions in the body of an inline class
-                it.parent.safeAs<IrClass>()?.isSingleFieldValueClass == true ->
+                it.parent.safeAs<IrClass>()?.isInlineOrSealedInline == true ->
                     when {
                         it.isRemoveAtSpecialBuiltinStub() ->
                             null
@@ -90,7 +90,7 @@ class MemoizedInlineClassReplacements(
      */
     val getBoxFunction: (IrClass) -> IrSimpleFunction =
         storageManager.createMemoizedFunction { irClass ->
-            require(irClass.isSingleFieldValueClass)
+            require(irClass.isInlineOrSealedInline && irClass.superTypes.none { it.isInlineClassType() })
             irFactory.buildFun {
                 name = Name.identifier(KotlinTypeMapper.BOX_JVM_METHOD_NAME)
                 origin = JvmLoweredDeclarationOrigin.SYNTHETIC_INLINE_CLASS_MEMBER
@@ -100,7 +100,7 @@ class MemoizedInlineClassReplacements(
                 copyTypeParametersFrom(irClass)
                 addValueParameter {
                     name = InlineClassDescriptorResolver.BOXING_VALUE_PARAMETER_NAME
-                    type = irClass.inlineClassRepresentation!!.underlyingType
+                    type = context.irBuiltIns.getInlineClassUnderlyingType(irClass)
                 }
             }
         }
@@ -111,7 +111,7 @@ class MemoizedInlineClassReplacements(
      */
     val getUnboxFunction: (IrClass) -> IrSimpleFunction =
         storageManager.createMemoizedFunction { irClass ->
-            require(irClass.isSingleFieldValueClass)
+            require((irClass.isInlineOrSealedInline) && irClass.superTypes.none { it.isInlineClassType() })
             irFactory.buildFun {
                 name = Name.identifier(KotlinTypeMapper.UNBOX_JVM_METHOD_NAME)
                 origin = JvmLoweredDeclarationOrigin.SYNTHETIC_INLINE_CLASS_MEMBER
@@ -124,7 +124,7 @@ class MemoizedInlineClassReplacements(
 
     private val specializedEqualsCache = storageManager.createCacheWithNotNullValues<IrClass, IrSimpleFunction>()
     fun getSpecializedEqualsMethod(irClass: IrClass, irBuiltIns: IrBuiltIns): IrSimpleFunction {
-        require(irClass.isSingleFieldValueClass)
+        require(irClass.isInlineOrSealedInline)
         return specializedEqualsCache.computeIfAbsent(irClass) {
             irFactory.buildFun {
                 name = InlineClassDescriptorResolver.SPECIALIZED_EQUALS_NAME
@@ -134,8 +134,11 @@ class MemoizedInlineClassReplacements(
             }.apply {
                 parent = irClass
                 // We ignore type arguments here, since there is no good way to go from type arguments to types in the IR anyway.
-                val typeArgument =
-                    IrSimpleTypeImpl(irClass.symbol, false, List(irClass.typeParameters.size) { IrStarProjectionImpl }, listOf())
+                val argumentType =
+                    if (irClass.modality == Modality.SEALED) context.irBuiltIns.anyNType
+                    else IrSimpleTypeImpl(
+                        irClass.symbol, false, List(irClass.typeParameters.size) { IrStarProjectionImpl }, listOf()
+                    )
                 addValueParameter {
                     name = InlineClassDescriptorResolver.SPECIALIZED_EQUALS_FIRST_PARAMETER_NAME
                     type = typeArgument

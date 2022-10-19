@@ -106,12 +106,38 @@ class ClassGenerator(
 
             generateFakeOverrideMemberDeclarations(irClass, ktClassOrObject)
 
-            irClass.valueClassRepresentation = classDescriptor.valueClassRepresentation?.mapUnderlyingType { type ->
-                type.toIrType() as? IrSimpleType ?: error("Value class underlying type is not a simple type: $classDescriptor")
-            }
+            if (ktClassOrObject is KtClassOrObject) {
+                if (classDescriptor.isInlineClass() || classDescriptor.isSealedInlineClass()) {
+                    irClass.valueClassRepresentation =
+                        if (irClass.modality == Modality.SEALED)
+                            SealedInlineClassRepresentation()
+                        else {
+                            val representation = classDescriptor.valueClassRepresentation
+                                ?: error("Unknown representation for inline class: $classDescriptor")
+                            representation.mapUnderlyingType { type ->
+                                val irType = type.toIrType() as? IrSimpleType
+                                    ?: error("Inline class underlying type is not a simple type: $classDescriptor")
 
-            if (irClass.isSingleFieldValueClass && ktClassOrObject is KtClassOrObject) {
-                generateAdditionalMembersForSingleFieldValueClasses(irClass, ktClassOrObject)
+                                if (classDescriptor.isInlineClass() && classDescriptor.getSuperClassOrAny().isSealedInlineClass() &&
+                                    type.isPrimitiveNumberType()
+                                ) {
+                                    irType.makeNullable() as? IrSimpleType
+                                        ?: error("Inline class underlying type is not a simple type: $classDescriptor")
+                                } else irType
+                            }
+                        }
+
+                    val isSealedInlineSubclassOfSealedInlineClass =
+                        classDescriptor.getSuperClassOrAny().isSealedInlineClass() && classDescriptor.isSealedInlineClass()
+
+                    if (!isSealedInlineSubclassOfSealedInlineClass) {
+                        generateAdditionalMembersForSingleFieldValueClasses(irClass, ktClassOrObject)
+                    }
+                } else if (classDescriptor.isMultiFieldValueClass()) {
+                    irClass.valueClassRepresentation = classDescriptor.valueClassRepresentation?.mapUnderlyingType { type ->
+                        type.toIrType() as? IrSimpleType ?: error("Value class underlying type is not a simple type: $classDescriptor")
+                    }
+                }
             }
 
             if (irClass.isData && ktClassOrObject is KtClassOrObject) {
