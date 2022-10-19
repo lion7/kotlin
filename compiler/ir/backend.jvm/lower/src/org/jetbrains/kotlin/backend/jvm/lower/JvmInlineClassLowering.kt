@@ -88,6 +88,203 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
         }
     }
 
+    /**
+     * In case of is checks of sealed inline classes, we generate is-Name functions on top and
+     * replace all is checks with calls to these functions.
+     */
+    override fun visitTypeOperator(expression: IrTypeOperatorCall): IrExpression {
+        if (expression.typeOperand.isInlineChildOfSealedInlineClass()) {
+            val transformed = super.visitTypeOperator(expression) as IrTypeOperatorCall
+            val top = transformed.typeOperand.findTopSealedInlineSuperClass()
+            val isCheck = context.inlineClassReplacements.getIsSealedInlineChildFunction(top to transformed.typeOperand.classOrNull!!.owner)
+            val underlyingType = transformed.typeOperand.unboxInlineClass()
+            val currentScopeSymbol = (currentScope?.irElement as? IrSymbolOwner)?.symbol
+                ?: error("${currentScope?.irElement?.render()} is not valid symbol owner")
+
+            when (transformed.operator) {
+                IrTypeOperator.INSTANCEOF -> {
+                    // if (top != null) false else Top.is-Child(top)
+                    with(context.createIrBuilder(currentScopeSymbol)) {
+                        return irBlock {
+                            val tmp = irTemporary(transformed.argument)
+                            +irIfNull(
+                                context.irBuiltIns.booleanType, irGet(tmp), irFalse(),
+                                irCall(isCheck.symbol).apply {
+                                    putValueArgument(0, coerceFromSealedInlineClass(top, irGet(tmp)))
+                                }
+                            )
+                        }
+                    }
+                }
+
+                IrTypeOperator.NOT_INSTANCEOF -> {
+                    // if (top != null) true else Top.is-Child(top).not()
+                    with(context.createIrBuilder(currentScopeSymbol)) {
+                        return irBlock {
+                            val tmp = irTemporary(transformed.argument)
+                            +irIfNull(
+                                context.irBuiltIns.booleanType, irGet(tmp), irTrue(),
+                                irNot(irCall(isCheck.symbol).apply {
+                                    putValueArgument(0, coerceFromSealedInlineClass(top, irGet(tmp)))
+                                })
+                            )
+                        }
+                    }
+                }
+
+                IrTypeOperator.CAST -> {
+                    // if (Top.is-Child(top)) top else CCE
+                    return generateAsCheckForSealedInlineClass(currentScopeSymbol, transformed, top, isCheck, underlyingType) {
+                        irThrow(
+                            irCall(this@JvmInlineClassLowering.context.ir.symbols.classCastExceptionCtorString).apply {
+                                putValueArgument(
+                                    0,
+                                    irString("Cannot cast to sealed inline class subclass ${expression.typeOperand.classFqName}")
+                                )
+                            }
+                        )
+                    }
+                }
+
+                IrTypeOperator.SAFE_CAST -> {
+                    // if (Top.is-Child(top)) top else null
+                    return generateAsCheckForSealedInlineClass(currentScopeSymbol, transformed, top, isCheck, underlyingType) { irNull() }
+                }
+
+                else -> {
+                    return transformed
+                }
+            }
+        } else if (expression.typeOperand.isNoinlineChildOfSealedInlineClass()) {
+            val transformed = super.visitTypeOperator(expression) as IrTypeOperatorCall
+            val top = transformed.typeOperand.findTopSealedInlineSuperClass()
+            val currentScopeSymbol = (currentScope?.irElement as? IrSymbolOwner)?.symbol
+                ?: error("${currentScope?.irElement?.render()} is not valid symbol owner")
+
+            when (expression.operator) {
+                IrTypeOperator.CAST -> {
+                    transformed.argument = coerceFromSealedInlineClass(top, expression.argument)
+                    return transformed
+                }
+
+                IrTypeOperator.SAFE_CAST -> {
+                    with(context.createIrBuilder(currentScopeSymbol)) {
+                        return irBlock {
+                            val tmp = irTemporary(transformed.argument)
+                            +irIfNull(
+                                transformed.type, irGet(tmp), irNull(),
+                                irAs(coerceFromSealedInlineClass(top, irGet(tmp)), transformed.typeOperand)
+                            )
+                        }
+                    }
+                }
+
+                IrTypeOperator.INSTANCEOF -> {
+                    with(context.createIrBuilder(currentScopeSymbol)) {
+                        return irBlock {
+                            val tmp = irTemporary(transformed.argument)
+                            +irIfNull(
+                                transformed.type, irGet(tmp), irFalse(),
+                                irIs(coerceFromSealedInlineClass(top, irGet(tmp)), transformed.typeOperand)
+                            )
+                        }
+                    }
+                }
+
+                IrTypeOperator.NOT_INSTANCEOF -> {
+                    with(context.createIrBuilder(currentScopeSymbol)) {
+                        return irBlock {
+                            val tmp = irTemporary(transformed.argument)
+                            +irIfNull(
+                                transformed.type, irGet(tmp), irTrue(),
+                                irNotIs(coerceFromSealedInlineClass(top, irGet(tmp)), transformed.typeOperand)
+                            )
+                        }
+                    }
+                }
+
+                else -> {
+                    return transformed
+                }
+            }
+        }
+
+        return super.visitTypeOperator(expression)
+    }
+
+    private fun generateAsCheckForSealedInlineClass(
+        currentScopeSymbol: IrSymbol,
+        expression: IrTypeOperatorCall,
+        top: IrClass,
+        isCheck: IrSimpleFunction,
+        underlyingType: IrType,
+        onFail: IrBuilderWithScope.() -> IrExpression
+    ): IrExpression {
+        with(context.createIrBuilder(currentScopeSymbol)) {
+            return irBlock {
+                val tmp = irTemporary(expression.argument)
+                +irIfNull(
+                    expression.type, irGet(tmp), onFail(),
+                    irBlock {
+                        val unboxedTmp = irTemporary(coerceFromSealedInlineClass(top, irGet(tmp)))
+                        +irWhen(
+                            expression.type, listOf(
+                                irBranch(
+                                    irCall(isCheck.symbol).also { it.putValueArgument(0, irGet(unboxedTmp)) },
+                                    coerceInlineClasses(irGet(unboxedTmp), underlyingType, expression.typeOperand)
+                                ),
+                                irElseBranch(onFail())
+                            )
+                        )
+                    }
+                )
+            }
+        }
+    }
+
+    /* For `is` and `as` checks, we cannot use INSTANCEOF and CHECKCAST, since the underlying type of inline child can be `Any`
+     * instead, we check, whether it is not noinline first, and then use INSTANCEOF underlying type. Since we do not want to generate
+     * these switch-cases for each `is` and `as` check, we generate is-<Child> methods, which we call in `is` and `as` checks.
+     *
+     * These methods we generate only for inline subclasses, for noinline subclasses we simply use INSTANCEOF.
+     */
+    private fun buildIsMethodsForSealedInlineClass(info: SealedInlineClassInfo) {
+        for (childInfo in info.inlineSubclasses + info.sealedInlineSubclasses.dropLast(1)) {
+            val child = childInfo.owner
+            val function = context.inlineClassReplacements.getIsSealedInlineChildFunction(info.top to child)
+            val underlyingType =
+                if (child.isSealedInline) context.irBuiltIns.anyNType
+                else child.inlineClassRepresentation?.underlyingType ?: error("${child.render()} is neither inline nor sealed inline")
+
+            with(context.createIrBuilder(function.symbol)) {
+                function.body = irBlockBody {
+                    fun param(): IrExpression = irGet(function.valueParameters.first())
+
+                    val branches = mutableListOf<IrBranch>()
+
+                    if (!underlyingType.isNullable()) {
+                        branches += irBranch(
+                            irEqeqeq(param(), irNull()),
+                            irReturn(irFalse())
+                        )
+                    }
+
+                    for (noinline in info.noinlineSubclasses) {
+                        branches += irBranch(
+                            irIs(param(), noinline.owner.defaultType),
+                            irReturn(irFalse())
+                        )
+                    }
+
+                    branches += irElseBranch(irReturn(irIs(param(), underlyingType)))
+
+                    +irReturn(irWhen(context.irBuiltIns.booleanType, branches))
+                }
+            }
+
+            info.top.addMember(function)
+        }
+    }
 
     private fun rewriteConstructorForSealedInlineClassChild(irClass: IrClass, parent: IrClass, irConstructor: IrConstructor) {
         val toCall =

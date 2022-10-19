@@ -142,6 +142,69 @@ class MemoizedInlineClassReplacements(
             }
         }
 
+    /**
+     * Get the is-check function for sealed inline class child. The function checks, that
+     * underlying value of sealed inline class has the same underlying type of the child.
+     *
+     * Note, that for noinline sealed inline class children are checked as usual.
+     */
+    val getIsSealedInlineChildFunction: (Pair<IrClass, IrClass>) -> IrSimpleFunction =
+        storageManager.createMemoizedFunction { (top, child) ->
+            require(top.isSealedInline && child.isChildOfSealedInlineClass()) {
+                "Expected sealed inline class child, but got ${child.render()}, which is not a child of ${top.render()}"
+            }
+            irFactory.buildFun {
+                name = Name.identifier("is-${child.name}")
+                origin = JvmLoweredDeclarationOrigin.SYNTHETIC_INLINE_CLASS_MEMBER
+                returnType = context.irBuiltIns.booleanType
+            }.apply {
+                parent = top
+                copyTypeParametersFrom(top)
+                addValueParameter {
+                    name = InlineClassDescriptorResolver.BOXING_VALUE_PARAMETER_NAME
+                    type = context.irBuiltIns.anyNType
+                }
+            }
+        }
+
+    /**
+     * For method in children of sealed inline classes we generate method in the top.
+     */
+    val getSealedInlineClassChildFunctionInTop: (Pair<IrClass, SimpleFunctionWithoutReceiver>) -> IrSimpleFunction =
+        storageManager.createMemoizedFunction { (top, method) ->
+            require(top.isSealedInline) {
+                "Expected method in sealed inline class child"
+            }
+            irFactory.buildFun {
+                name = Name.identifier(InlineClassAbi.functionNameBase(method.function))
+                origin = JvmLoweredDeclarationOrigin.GENERATED_SEALED_INLINE_CLASS_METHOD
+                returnType = method.function.returnType
+            }.apply {
+                parent = top
+                copyTypeParameters(method.function.typeParameters)
+
+                copyPropertyIfNeeded(method.function)
+
+                val substitutionMap = method.function.typeParameters.map { it.symbol }.zip(typeParameters.map { it.defaultType }).toMap()
+                // Replace dispatch parameter from child to top
+                dispatchReceiverParameter = factory.createValueParameter(
+                    startOffset, endOffset, origin,
+                    IrValueParameterSymbolImpl(),
+                    name, -1,
+                    top.defaultType.substitute(substitutionMap),
+                    null, isCrossinline = false, isNoinline = false, isHidden = false, isAssignable = false
+                ).also { parameter ->
+                    parameter.parent = this
+                }
+                extensionReceiverParameter = method.function.extensionReceiverParameter?.copyTo(this)
+
+                val shift = valueParameters.size
+                valueParameters = method.function.valueParameters.map {
+                    it.copyTo(this, index = it.index + shift, type = it.type.substitute(substitutionMap))
+                }
+            }
+        }
+
     private val specializedEqualsCache = storageManager.createCacheWithNotNullValues<IrClass, IrSimpleFunction>()
     fun getSpecializedEqualsMethod(irClass: IrClass, irBuiltIns: IrBuiltIns): IrSimpleFunction {
         require(irClass.isInlineOrSealedInline)
