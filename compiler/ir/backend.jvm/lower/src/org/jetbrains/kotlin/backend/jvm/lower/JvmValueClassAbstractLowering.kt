@@ -64,7 +64,7 @@ internal abstract class JvmValueClassAbstractLowering(val context: JvmBackendCon
             // This is a potential problem for bridge generation, where we have to ensure that the overridden
             // symbols are always up to date. Right now they might not be since we lower each file independently
             // and since deserialized declarations are not mangled at all.
-            if (function is IrSimpleFunction) {
+            if (function is IrSimpleFunction && function.parent.safeAs<IrClass>()?.isChildOfSealedInlineClass() != true) {
                 function.overriddenSymbols = replacements.replaceOverriddenSymbols(function)
             }
             return null
@@ -87,10 +87,10 @@ internal abstract class JvmValueClassAbstractLowering(val context: JvmBackendCon
         }
     }
 
-    private fun transformFlattenedConstructor(function: IrConstructor, replacement: IrConstructor): List<IrDeclaration>? {
-        replacement.valueParameters.forEach {
-            it.transformChildrenVoid()
-            it.defaultValue?.patchDeclarationParents(replacement)
+    private fun transformFlattenedConstructor(function: IrConstructor, replacement: IrConstructor): List<IrDeclaration> {
+        for (parameter in replacement.valueParameters) {
+            parameter.transformChildrenVoid()
+            parameter.defaultValue?.patchDeclarationParents(replacement)
         }
         allScopes.push(createScope(function))
         replacement.body = function.body?.transform(this, null)?.patchDeclarationParents(replacement)
@@ -106,10 +106,10 @@ internal abstract class JvmValueClassAbstractLowering(val context: JvmBackendCon
 
     protected abstract fun transformSecondaryConstructorFlat(constructor: IrConstructor, replacement: IrSimpleFunction): List<IrDeclaration>
 
-    private fun transformSimpleFunctionFlat(function: IrSimpleFunction, replacement: IrSimpleFunction): List<IrDeclaration> {
-        replacement.valueParameters.forEach {
-            it.transformChildrenVoid()
-            it.defaultValue?.patchDeclarationParents(replacement)
+    protected open fun transformSimpleFunctionFlat(function: IrSimpleFunction, replacement: IrSimpleFunction): List<IrDeclaration> {
+        for (parameter in replacement.valueParameters) {
+            parameter.transformChildrenVoid()
+            parameter.defaultValue?.patchDeclarationParents(replacement)
         }
         allScopes.push(createScope(replacement))
         replacement.body = function.body?.transform(this, null)?.patchDeclarationParents(replacement)
@@ -208,9 +208,9 @@ internal abstract class JvmValueClassAbstractLowering(val context: JvmBackendCon
         // Replace the function body with a wrapper
         if (bridgeFunction.isFakeOverride && bridgeFunction.parentAsClass.isSpecificLoweringLogicApplicable()) {
             // Fake overrides redirect from the replacement to the original function, which is in turn replaced during interfacePhase.
-            createBridgeBody(replacement, bridgeFunction, function, true)
+            createBridgeBody(replacement, bridgeFunction)
         } else {
-            createBridgeBody(bridgeFunction, replacement, function, false)
+            createBridgeBody(bridgeFunction, replacement)
         }
         return bridgeFunction
     }
@@ -231,5 +231,5 @@ internal abstract class JvmValueClassAbstractLowering(val context: JvmBackendCon
     // visibility rules for bridge methods.
     abstract fun createBridgeDeclaration(source: IrSimpleFunction, replacement: IrSimpleFunction, mangledName: Name): IrSimpleFunction
 
-    protected abstract fun createBridgeBody(source: IrSimpleFunction, target: IrSimpleFunction, original: IrFunction, inverted: Boolean)
+    protected abstract fun createBridgeBody(source: IrSimpleFunction, target: IrSimpleFunction, returnBoxedSealedInlineClass: Boolean = false)
 }

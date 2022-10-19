@@ -459,7 +459,7 @@ private class JvmMultiFieldValueClassLowering(context: JvmBackendContext) : JvmV
             copyAttributes(source)
         }
 
-    override fun createBridgeBody(source: IrSimpleFunction, target: IrSimpleFunction, original: IrFunction, inverted: Boolean) {
+    override fun createBridgeBody(source: IrSimpleFunction, target: IrSimpleFunction, returnBoxedSealedInlineClass: Boolean) {
         allScopes.push(createScope(source))
         source.body = context.createIrBuilder(source.symbol, source.startOffset, source.endOffset).run {
             val sourceExplicitParameters = source.explicitParameters

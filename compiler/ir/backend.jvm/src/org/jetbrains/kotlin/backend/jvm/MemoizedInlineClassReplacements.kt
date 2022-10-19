@@ -327,6 +327,12 @@ class MemoizedInlineClassReplacements(
             // The [updateFrom] call will set the modality to FINAL for constructors, while the JVM backend would use OPEN here.
             modality = Modality.OPEN
         }
+        if (function is IrSimpleFunction && function.modality == Modality.ABSTRACT &&
+            function.parentAsClass.isSealedInline &&
+            replacementOrigin == JvmLoweredDeclarationOrigin.STATIC_INLINE_CLASS_REPLACEMENT
+        ) {
+            modality = Modality.OPEN
+        }
         origin = when {
             function.origin == IrDeclarationOrigin.GENERATED_SINGLE_FIELD_VALUE_CLASS_MEMBER ->
                 JvmLoweredDeclarationOrigin.INLINE_CLASS_GENERATED_IMPL_METHOD
@@ -336,6 +342,12 @@ class MemoizedInlineClassReplacements(
                 replacementOrigin
         }
         name = InlineClassAbi.mangledNameFor(function, mangleReturnTypes, useOldManglingScheme)
+    }.apply {
+        if (function is IrSimpleFunction) {
+            copyPropertyIfNeeded(function)
+        }
+
+        body()
     }
 
     override val getReplacementForRegularClassConstructor: (IrConstructor) -> IrConstructor? = alwaysNull()
@@ -346,4 +358,40 @@ class MemoizedInlineClassReplacements(
                 computeOverrideReplacement(it.owner).symbol
             }
         }
+
+    private fun IrSimpleFunction.copyPropertyIfNeeded(function: IrSimpleFunction) {
+        val propertySymbol = function.correspondingPropertySymbol
+        if (propertySymbol != null) {
+            val property = commonBuildProperty(propertySymbol)
+            when (function.withoutReceiver()) {
+                propertySymbol.owner.getter?.withoutReceiver() -> property.getter = this
+                propertySymbol.owner.setter?.withoutReceiver() -> property.setter = this
+                else -> error("Orphaned property getter/setter: ${function.render()}")
+            }
+        }
+    }
+
+    class SimpleFunctionWithoutReceiver(
+        val function: IrSimpleFunction
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (other === this) return true
+            if (other !is SimpleFunctionWithoutReceiver) return false
+            return function.name == other.function.name &&
+                    function.typeParameters == other.function.typeParameters &&
+                    function.returnType == other.function.returnType &&
+                    function.extensionReceiverParameter == other.function.extensionReceiverParameter &&
+                    function.valueParameters == other.function.valueParameters
+        }
+
+        override fun hashCode(): Int {
+            return function.name.hashCode() xor
+                    function.typeParameters.hashCode() xor
+                    function.returnType.hashCode() xor
+                    function.extensionReceiverParameter.hashCode() xor
+                    function.valueParameters.hashCode()
+        }
+    }
 }
+
+fun IrSimpleFunction.withoutReceiver() = MemoizedInlineClassReplacements.SimpleFunctionWithoutReceiver(this)

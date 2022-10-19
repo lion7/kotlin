@@ -74,8 +74,10 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
         if (declaration.isChildOfSealedInlineClass() && declaration.isInlineOrSealedInline) {
             if (!declaration.isSealedInline) {
                 updateGetterForSealedInlineClassChild(declaration, declaration.defaultType.findTopSealedInlineSuperClass())
+                buildSpecializedEqualsMethod(declaration)
             }
             rewriteConstructorForSealedInlineClassChild(declaration, declaration.sealedInlineClassParent(), constructor)
+            removeMethodsFromSealedInlineClassChildren(declaration)
         }
 
         if (declaration.isSealedInline && !declaration.isChildOfSealedInlineClass()) {
@@ -85,6 +87,10 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
 
             patchReceiverParameterOfValueGetter(declaration)
 
+            val info = SealedInlineClassInfo.analyze(declaration, context)
+            buildIsMethodsForSealedInlineClass(info)
+            rewriteMethodsForSealed(info)
+            buildSpecializedEqualsMethodForSealed(info)
         }
     }
 
@@ -286,6 +292,16 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
         }
     }
 
+    // Since we cannot create objects of sealed inline class children, we remove virtual methods from the classfile.
+    private fun removeMethodsFromSealedInlineClassChildren(irClass: IrClass) {
+        irClass.declarations.removeIf {
+            it is IrSimpleFunction &&
+                    (it.origin == IrDeclarationOrigin.GENERATED_SINGLE_FIELD_VALUE_CLASS_MEMBER ||
+                            it.origin == IrDeclarationOrigin.DEFINED ||
+                            it.origin == IrDeclarationOrigin.DEFAULT_PROPERTY_ACCESSOR)
+        }
+    }
+
     private fun rewriteConstructorForSealedInlineClassChild(irClass: IrClass, parent: IrClass, irConstructor: IrConstructor) {
         val toCall =
             parent.functions.find { it.origin == JvmLoweredDeclarationOrigin.PRIMARY_CONSTRUCTOR_FOR_SEALED_INLINE_CLASS }
@@ -456,6 +472,17 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
             copyAttributes(source)
         }
 
+    private fun IrSimpleFunction.overriddenInChildren(): Boolean {
+        val stack = mutableListOf<IrClassSymbol>()
+        stack += parentAsClass.sealedSubclasses
+        while (stack.isNotEmpty()) {
+            val current = stack.popLast()
+            val function = current.functions.find { it.owner.allOverridden().contains(this) }
+            if (function != null && !function.owner.isFakeOverride) return true
+            stack += current.owner.sealedSubclasses
+        }
+        return false
+    }
 
     private fun IrSimpleFunction.signatureRequiresMangling() =
         fullValueParameterList.any { it.type.getRequiresMangling() } ||
@@ -501,7 +528,15 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
         }
 
         if (declaration.isSpecificLoweringLogicApplicable()) {
-            handleSpecificNewClass(declaration)
+            if (declaration.isSealedInline || declaration.isChildOfSealedInlineClass()) {
+                val irConstructor = declaration.primaryConstructor
+                    ?: declaration.constructors.single {
+                        it.origin == JvmLoweredDeclarationOrigin.PRIMARY_CONSTRUCTOR_FOR_SEALED_INLINE_CLASS
+                    }
+                buildAdditionalMethodsForSealedInlineClass(declaration, irConstructor)
+            } else {
+                handleSpecificNewClass(declaration)
+            }
         }
 
         return declaration
@@ -525,15 +560,21 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
         buildSpecializedEqualsMethod(declaration)
     }
 
-
-    override fun createBridgeBody(source: IrSimpleFunction, target: IrSimpleFunction, original: IrFunction, inverted: Boolean) {
+    override fun createBridgeBody(source: IrSimpleFunction, target: IrSimpleFunction, returnBoxedSealedInlineClass: Boolean) {
         source.body = context.createIrBuilder(source.symbol, source.startOffset, source.endOffset).run {
-            irExprBody(irCall(target).apply {
+            val call = irCall(target).apply {
                 passTypeArgumentsFrom(source)
                 for ((parameter, newParameter) in source.explicitParameters.zip(target.explicitParameters)) {
                     putArgument(newParameter, irGet(parameter))
                 }
-            })
+            }
+            irExprBody(
+                if (returnBoxedSealedInlineClass) {
+                    coerceToSealedInlineClass(call, source.returnType.getClass()!!)
+                } else {
+                    call
+                }
+            )
         }
     }
 
@@ -633,8 +674,14 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
     }
 
     override fun visitFunctionAccess(expression: IrFunctionAccessExpression): IrExpression {
-        val function = expression.symbol.owner
+        val function = expression.symbol.owner.findTopSealedInlineClassFunction()
+
+        val delegatingCallOrSealedInlineClassConstructorInsideNoinlineClass =
+            expression is IrDelegatingConstructorCall && function.parentAsClass.isSealedInline &&
+                    (currentClass?.irElement as? IrClass)?.isInlineOrSealedInline == false
+
         val replacement = context.inlineClassReplacements.getReplacementFunction(function)
+            .takeIf { !delegatingCallOrSealedInlineClassConstructorInsideNoinlineClass }
             ?: return super.visitFunctionAccess(expression)
 
         return IrCallImpl(
@@ -644,6 +691,30 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
         ).apply {
             buildReplacement(function, expression, replacement)
         }
+    }
+
+    private fun IrFunction.findTopSealedInlineClassFunction(): IrFunction {
+        var function: IrSimpleFunction? = this as? IrSimpleFunction ?: return this
+
+        val inlineClass = (function!!.parent as? IrClass)?.takeIf { it.isInline || it.isSealedInline } ?: return function
+
+        val topSealedInlineClass =
+            if (inlineClass.isChildOfSealedInlineClass()) inlineClass.defaultType.findTopSealedInlineSuperClass()
+            else null
+
+        if (topSealedInlineClass != null) {
+            while (function != null && function.parent != topSealedInlineClass) {
+                function = function.overriddenSymbols.find { symbol ->
+                    symbol.owner.parentAsClass.let { it.isInline || it.isSealedInline }
+                }?.owner
+            }
+        }
+
+        if (function == null) {
+            return context.inlineClassReplacements.getSealedInlineClassChildFunctionInTop(topSealedInlineClass!! to withoutReceiver())
+        }
+
+        return function
     }
 
     private fun coerceInlineClasses(argument: IrExpression, from: IrType, to: IrType, skipCast: Boolean = false): IrExpression {
@@ -704,8 +775,8 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
 
         val leftNullCheck = left.type.isNullable()
         val rightNullCheck = rightIsUnboxed && right.type.isNullable() // equals-impl has a nullable second argument
-        return if (leftNullCheck || rightNullCheck) {
-            irBlock {
+        if (leftNullCheck || rightNullCheck) {
+            return irBlock {
                 val leftVal = if (left is IrGetValue) left.symbol.owner else irTemporary(left)
                 val rightVal = if (right is IrGetValue) right.symbol.owner else irTemporary(right)
 
@@ -726,8 +797,37 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
                     +equalsRight
                 }
             }
+        } else if (left.type.isInlineChildOfSealedInlineClass() || left.type.classOrNull?.owner?.isSealedInline == true) {
+            return irBlock {
+                val leftTop =
+                    if (left.type.isInlineChildOfSealedInlineClass()) left.type.findTopSealedInlineSuperClass()
+                    else left.type.classOrNull!!.owner
+
+                val rightVar = irTemporary(
+                    if (right.type.classOrNull?.owner?.let { it.isSealedInline || it.isChildOfSealedInlineClass() } == true)
+                        coerceFromSealedInlineClass(right.type.findTopSealedInlineSuperClass(), right)
+                    else right
+                )
+
+                val leftVar: IrVariable
+                val equalsMethod: IrSimpleFunction
+                if (rightIsUnboxed || right.type.isNoinlineChildOfSealedInlineClass()) {
+                    leftVar = irTemporary(coerceFromSealedInlineClass(leftTop, left))
+                    equalsMethod =
+                        this@JvmInlineClassLowering.context.inlineClassReplacements.getSpecializedEqualsMethod(leftTop, context.irBuiltIns)
+                } else {
+                    leftVar = irTemporary(left)
+                    val equals = leftTop.functions.single { it.name.asString() == "equals" && it.overriddenSymbols.isNotEmpty() }
+                    equalsMethod = this@JvmInlineClassLowering.context.inlineClassReplacements.getReplacementFunction(equals)!!
+                }
+
+                +irCall(equalsMethod).apply {
+                    putValueArgument(0, irGet(leftVar))
+                    putValueArgument(1, irGet(rightVar))
+                }
+            }
         } else {
-            equals(left, right)
+            return equals(left, right)
         }
     }
 
@@ -743,7 +843,11 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
             // since the underlying representations are the same.
             expression.symbol.owner.isInlineClassFieldGetter -> {
                 val arg = expression.dispatchReceiver!!.transform(this, null)
-                coerceInlineClasses(arg, expression.symbol.owner.dispatchReceiverParameter!!.type, expression.type)
+                val type =
+                    if (expression.symbol.owner.parentAsClass.isChildOfSealedInlineClass() && expression.type.isPrimitiveType())
+                        expression.type.makeNullable()
+                    else expression.type
+                coerceInlineClasses(arg, expression.symbol.owner.dispatchReceiverParameter!!.type, type)
             }
             // Specialize calls to equals when the left argument is a value of inline class type.
             expression.isSpecializedInlineClassEqEq -> {
@@ -753,9 +857,47 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
                     ?: expression
             }
 
+            expression.isSpecializedNoinlineChildOfSealedInlineClassEqEq -> {
+                expression.transformChildrenVoid()
+                callEqualsOfTopSealedInlineClass(expression) ?: expression
+            }
+
             else ->
                 super.visitCall(expression)
         }
+
+    private fun callEqualsOfTopSealedInlineClass(expression: IrCall): IrExpression? {
+        if (expression.getValueArgument(0)?.isNullConst() == true || expression.getValueArgument(1)?.isNullConst() == true)
+            return null
+
+        with(context.createIrBuilder(currentScope!!.scope.scopeOwnerSymbol, expression.startOffset, expression.endOffset)) {
+            val top = expression.getValueArgument(0)!!.type.findTopSealedInlineSuperClass()
+
+            return irBlock {
+                val left = expression.getValueArgument(0)!!
+                val right = expression.getValueArgument(1)!!
+
+                if (right.type.isNoinlineChildOfSealedInlineClass() || right.type.classOrNull?.owner?.isSealedInline == true) {
+                    val equals = this@JvmInlineClassLowering.context.inlineClassReplacements.getSpecializedEqualsMethod(
+                        top, context.irBuiltIns
+                    )
+                    +irCall(equals).also {
+                        it.putValueArgument(0, coerceFromSealedInlineClass(top, left))
+                        it.putValueArgument(1, coerceFromSealedInlineClass(top, right))
+                    }
+                } else {
+                    val equals = this@JvmInlineClassLowering.context.inlineClassReplacements.getReplacementFunction(
+                        top.functions.single { it.name.asString() == "equals" && it.overriddenSymbols.isNotEmpty() }
+                    )!!
+
+                    +irCall(equals).also {
+                        it.putValueArgument(0, left)
+                        it.putValueArgument(1, right)
+                    }
+                }
+            }
+        }
+    }
 
     private val IrCall.isSpecializedInlineClassEqEq: Boolean
         get() {
@@ -770,6 +912,13 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
             // Before version 1.4, we cannot rely on the Result.equals-impl0 method
             return (leftClass.fqNameWhenAvailable != StandardNames.RESULT_FQ_NAME) ||
                     context.state.languageVersionSettings.apiVersion >= ApiVersion.KOTLIN_1_4
+        }
+
+    private val IrCall.isSpecializedNoinlineChildOfSealedInlineClassEqEq: Boolean
+        get() {
+            if (symbol != context.irBuiltIns.eqeqSymbol) return false
+
+            return getValueArgument(0)?.type?.isNoinlineChildOfSealedInlineClass() == true
         }
 
     override fun visitGetField(expression: IrGetField): IrExpression {
@@ -896,6 +1045,312 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
         valueClass.declarations += function
     }
 
+    private fun rewriteMethodsForSealed(info: SealedInlineClassInfo) {
+        rewriteOpenAndAbstractMethodsForSealed(info)
+    }
+
+    /**
+     * Methods of sealed inline classes and their children all go through the top,
+     * where we check, which one we should call in giant switch-case.
+     *
+     * First, we check for noinline children, then for inline children and finally, just run the top's method body.
+     */
+    private fun rewriteOpenAndAbstractMethodsForSealed(info: SealedInlineClassInfo) {
+        for ((methodSymbol, retargets, addToClass) in info.methods) {
+            if (methodSymbol.owner.isEquals(context)) {
+                generateEqualsMethodForSealedInlineClass(info.top, replacements.getReplacementFunction(methodSymbol.owner)!!)
+
+                continue
+            }
+
+            val replacements = context.inlineClassReplacements
+            val original = methodSymbol.owner.attributeOwnerId as IrSimpleFunction
+            val staticReplacement = replacements.getReplacementFunction(original)
+                ?: replacements.getReplacementFunction(
+                    replacements.getSealedInlineClassChildFunctionInTop(info.top to original.withoutReceiver())
+                ) ?: error("Cannot find replacement for ${methodSymbol.owner.render()}")
+
+            with(context.createIrBuilder(staticReplacement.symbol)) {
+                staticReplacement.body = irBlockBody {
+                    val receiver = irTemporary(coerceFromSealedInlineClass(info.top, irGet(staticReplacement.valueParameters[0])))
+
+                    val branches = mutableListOf<IrBranch>()
+
+                    for (noinlineSubclass in info.noinlineSubclasses) {
+                        val retarget = retargets[noinlineSubclass]
+                        // No override defined in the child
+                        // In this case, we just move the body of the parent
+                        if (retarget == null) {
+                            branches += irBranch(
+                                irIs(
+                                    coerceFromSealedInlineClass(info.top, irGet(staticReplacement.valueParameters[0])),
+                                    noinlineSubclass.owner.defaultType
+                                ),
+                                sealedInlineClassMethodDefaultBehavior(info.top, methodSymbol, staticReplacement)
+                            )
+                            continue
+                        }
+                        val retargetClass = retarget.owner.parentAsClass
+                        val toCall =
+                            if (retargetClass.let { it.isInline || it.isSealedInline })
+                                replacements.getReplacementFunction(retarget.owner)!!.symbol
+                            else retarget
+
+                        branches +=
+                            irBranch(
+                                irIs(
+                                    coerceFromSealedInlineClass(info.top, irGet(staticReplacement.valueParameters[0])),
+                                    noinlineSubclass.owner.defaultType
+                                ),
+                                if (retargetClass.symbol == info.top.symbol)
+                                    sealedInlineClassMethodDefaultBehavior(info.top, methodSymbol, staticReplacement)
+                                else irCall(toCall).apply {
+                                    if (retargetClass.isInlineOrSealedInline) {
+                                        putValueArgument(0, irGet(staticReplacement.valueParameters[0]))
+                                    } else {
+                                        dispatchReceiver =
+                                            irImplicitCast(irGet(staticReplacement.valueParameters[0]), noinlineSubclass.owner.defaultType)
+                                    }
+                                    for ((target, source) in toCall.owner.explicitParameters.zip(staticReplacement.explicitParameters)
+                                        .drop(1)) {
+                                        putArgument(target, irGet(source))
+                                    }
+                                }
+                            )
+                    }
+
+                    for (inlineSubclass in info.inlineSubclasses) {
+                        val underlyingType = inlineSubclass.owner.inlineClassRepresentation!!.underlyingType
+
+                        val retarget = retargets[inlineSubclass] ?: continue
+                        val retargetClass = retarget.owner.parentAsClass
+                        val toCall = replacements.getReplacementFunction(retarget.owner)!!.symbol
+
+                        branches +=
+                            irBranch(
+                                irIs(irGet(receiver), underlyingType),
+                                if (retargetClass.symbol == info.top.symbol)
+                                    sealedInlineClassMethodDefaultBehavior(info.top, methodSymbol, staticReplacement)
+                                else irCall(toCall).apply {
+                                    putValueArgument(
+                                        0, coerceInlineClasses(irGet(receiver), underlyingType, inlineSubclass.owner.defaultType)
+                                    )
+                                    for ((target, source) in toCall.owner.explicitParameters.zip(staticReplacement.explicitParameters)
+                                        .drop(1)) {
+                                        putArgument(target, irGet(source))
+                                    }
+                                }
+                            )
+                    }
+
+                    val sealedInlineSubclass = info.sealedInlineSubclasses.first()
+                    var retarget = retargets[sealedInlineSubclass]
+                    if (retarget != null && retarget.owner.origin != JvmLoweredDeclarationOrigin.STATIC_INLINE_CLASS_REPLACEMENT) {
+                        retarget = replacements.getReplacementFunction(retarget.owner)?.symbol
+                    }
+
+                    branches += irElseBranch(
+                        if (retarget != null && retarget.owner.parentAsClass.symbol != info.top.symbol) {
+                            irCall(retarget).apply {
+                                putValueArgument(0, coerceToSealedInlineClass(irGet(receiver), info.top))
+                                for ((target, source) in retarget.owner.explicitParameters
+                                    .zip(staticReplacement.explicitParameters).drop(1)
+                                ) {
+                                    putArgument(target, irGet(source))
+                                }
+                            }
+                        } else {
+                            sealedInlineClassMethodDefaultBehavior(info.top, methodSymbol, staticReplacement)
+                        }
+                    )
+
+                    +irReturn(irWhen(staticReplacement.returnType, branches))
+                }
+            }
+
+            if (addToClass) {
+                info.top.addFunctionToSealedInlineClass(methodSymbol, staticReplacement, retargets)
+            }
+        }
+    }
+
+    // Default behavior of can be either
+    // 1. Execute existing body (oldBody)
+    // 2. Call super method
+    // If both these fail, throw an exception, which should be unreachable, unless it is called via reflection.
+    private fun IrBlockBodyBuilder.sealedInlineClassMethodDefaultBehavior(
+        irClass: IrClass,
+        methodSymbol: IrSimpleFunctionSymbol,
+        staticReplacement: IrSimpleFunction
+    ): IrExpression = when (val oldBody = staticReplacement.body) {
+        is IrExpressionBody -> irReturn(oldBody.expression.deepCopySavingMetadata(staticReplacement))
+        is IrBlockBody -> irBlock {
+            for (stmt in oldBody.statements) {
+                +stmt.deepCopySavingMetadata(staticReplacement)
+            }
+        }
+
+        null -> {
+            callDefaultMethodOfSealedInlineClassSuperinterface(irClass, methodSymbol, staticReplacement)
+                ?: irThrow(
+                    irCall(this@JvmInlineClassLowering.context.ir.symbols.illegalStateExceptionCtorString).apply {
+                        putValueArgument(0, irString("Invalid sealed inline class method call"))
+                    }
+                )
+        }
+
+        else -> error("oldBody is not a function body: ${oldBody.dump()}")
+    }
+
+    private fun IrClass.addFunctionToSealedInlineClass(
+        methodSymbol: IrSimpleFunctionSymbol,
+        staticReplacement: IrSimpleFunction,
+        retargets: Map<IrClassSymbol, IrSimpleFunctionSymbol>
+    ) {
+        if (methodSymbol.owner.modality != Modality.ABSTRACT) {
+            addMember(staticReplacement)
+        }
+
+        createBridgeToSealedInlineClassMethodIfNeeded(methodSymbol, staticReplacement, retargets)
+        updateOverriddenSymbolsOfSealedInlineClassMethodOverrides(methodSymbol, staticReplacement, retargets.values)
+        removeFakeOverrideOfDefalutMethodFromSealedInlineClass(methodSymbol)
+    }
+
+    private fun updateOverriddenSymbolsOfSealedInlineClassMethodOverrides(
+        methodSymbol: IrSimpleFunctionSymbol,
+        staticReplacement: IrSimpleFunction,
+        retargets: Collection<IrSimpleFunctionSymbol>
+    ) {
+        for (retarget in retargets) {
+            val override = if (retarget.owner.origin != JvmLoweredDeclarationOrigin.STATIC_INLINE_CLASS_REPLACEMENT) {
+                retarget.owner.overriddenSymbols += methodSymbol
+                replacements.getReplacementFunction(retarget.owner) ?: retarget.owner
+            } else retarget.owner
+
+            override.overriddenSymbols += staticReplacement.symbol
+        }
+    }
+
+    private fun IrClass.createBridgeToSealedInlineClassMethodIfNeeded(
+        methodSymbol: IrSimpleFunctionSymbol,
+        function: IrSimpleFunction,
+        retargets: Map<IrClassSymbol, IrSimpleFunctionSymbol>
+    ) {
+        val allOverridden = retargets
+            .flatMap { (_, retarget) -> retarget.owner.allOverridden() }
+            .toSet()
+
+        if (retargets.values.any { it.owner.parentAsClass.isSealedInline } || allOverridden.any { it.parentAsClass.isInterface }) {
+            val bridge = context.irFactory.buildFun {
+                updateFrom(methodSymbol.owner)
+                origin = methodSymbol.owner.origin
+                modality = Modality.OPEN
+                name = methodSymbol.owner.name
+                returnType = methodSymbol.owner.returnType
+            }.apply {
+                copyParameterDeclarationsFrom(methodSymbol.owner)
+                annotations = methodSymbol.owner.annotations
+                parent = this@createBridgeToSealedInlineClassMethodIfNeeded
+            }
+            addMember(bridge)
+
+            val returnBoxed = bridge.returnType.isInlineClassType() && !bridge.returnType.isNullable() &&
+                    allOverridden.any {
+                        it.returnType.isNullable() || it.returnType.isAny() ||
+                                it.returnType.isNullableAny() || it.returnType.isTypeParameter()
+                    }
+
+            createBridgeBody(bridge, function, returnBoxed)
+        }
+    }
+
+    // Remove fake overrides of default methods, we generated its replacement ourselves
+    private fun IrClass.removeFakeOverrideOfDefalutMethodFromSealedInlineClass(methodSymbol: IrSimpleFunctionSymbol) {
+        if (methodSymbol.owner.origin == JvmLoweredDeclarationOrigin.GENERATED_SEALED_INLINE_CLASS_METHOD) {
+            val fakeOverride = findFakeOverrideOfInterfaceMethodInSealedInlineClass(methodSymbol)
+            if (fakeOverride != null && fakeOverride.allOverridden().any {
+                    it.parentAsClass.isInterface && it.modality != Modality.ABSTRACT
+                }
+            ) {
+                declarations.remove(fakeOverride)
+            }
+        }
+    }
+
+    private fun IrClass.findFakeOverrideOfInterfaceMethodInSealedInlineClass(methodSymbol: IrSimpleFunctionSymbol): IrSimpleFunction? =
+        functions.find {
+            it.isFakeOverride && context.inlineClassReplacements
+                .getSealedInlineClassChildFunctionInTop(this to it.withoutReceiver()).symbol == methodSymbol
+        }
+
+    private fun IrBuilderWithScope.callDefaultMethodOfSealedInlineClassSuperinterface(
+        top: IrClass,
+        methodSymbol: IrSimpleFunctionSymbol,
+        function: IrSimpleFunction
+    ): IrExpression? {
+        if (methodSymbol.owner.origin == JvmLoweredDeclarationOrigin.GENERATED_SEALED_INLINE_CLASS_METHOD) {
+            val fakeOverride = top.findFakeOverrideOfInterfaceMethodInSealedInlineClass(methodSymbol)
+            if (fakeOverride != null) {
+                val defaultMethod = fakeOverride.overriddenSymbols.find {
+                    it.owner.parentAsClass.isInterface && it.owner.modality != Modality.ABSTRACT
+                }
+                if (defaultMethod != null) {
+                    val callDefaultImpls = this@JvmInlineClassLowering.context.state.jvmDefaultMode
+                        .let { it.isEnabled && !it.forAllMethodsWithBody }
+                    if (callDefaultImpls) {
+                        val defaultImplsMethod = this@JvmInlineClassLowering.context.cachedDeclarations
+                            .getDefaultImplsFunction(defaultMethod.owner)
+                        return irCall(defaultImplsMethod.symbol).apply {
+                            for ((target, source) in defaultImplsMethod.explicitParameters.zip(function.explicitParameters)) {
+                                putArgument(target, irGet(source))
+                            }
+                        }
+                    } else {
+                        return irCall(defaultMethod.owner, superQualifierSymbol = defaultMethod.owner.parentAsClass.symbol).apply {
+                            dispatchReceiver = irImplicitCast(
+                                irGet(function.valueParameters[0]),
+                                defaultMethod.owner.parentAsClass.defaultType
+                            )
+                            for ((target, source) in defaultMethod.owner.explicitParameters.zip(function.explicitParameters).drop(1)) {
+                                putArgument(target, irGet(source))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null
+    }
+
+    /* The equals function for sealed inline classes looks like
+     * (given the class is named Top)
+     *
+     * fun equals(other: Any?) =
+     *   other is Top && equal-impl0(this.$value, other.$value)
+     */
+    private fun generateEqualsMethodForSealedInlineClass(top: IrClass, function: IrSimpleFunction) {
+        val equals = context.inlineClassReplacements.getSpecializedEqualsMethod(top, context.irBuiltIns)
+
+        with(context.createIrBuilder(function.symbol)) {
+            function.body = irExprBody(irAndand(
+                irIs(irGet(function.valueParameters[1]), top.defaultType),
+                irCall(equals).apply {
+                    putValueArgument(0, coerceFromSealedInlineClass(top, irGet(function.valueParameters[0])))
+                    putValueArgument(1, coerceFromSealedInlineClass(top, irGet(function.valueParameters[1])))
+                }
+            ))
+        }
+
+        // Replace fake override with generated function
+        val fakeOverride = top.functions.single {
+            it.origin == JvmLoweredDeclarationOrigin.STATIC_INLINE_CLASS_REPLACEMENT &&
+                    it.name.asString() == "equals-impl" && it.valueParameters.size == 2 &&
+                    it.valueParameters[0].type.classOrNull == top.symbol &&
+                    it.valueParameters[1].type == context.irBuiltIns.anyNType
+        }
+        top.declarations.remove(fakeOverride)
+        top.addMember(function)
+    }
 
     private fun coerceFromSealedInlineClass(top: IrClass, expr: IrExpression): IrExpression =
         coerceInlineClasses(expr, top.defaultType, context.irBuiltIns.anyNType)
@@ -961,6 +1416,210 @@ private class JvmInlineClassLowering(context: JvmBackendContext) : JvmValueClass
         return valueClass.functions
             .singleOrNull { context.inlineClassReplacements.originalFunctionForStaticReplacement[it]?.run { isTypedEquals(this) } ?: false }
     }
+
+    /* For sealed inline classes, inside `equals-impl0` we check for types of parameters and then call respective `equals` of `equals-impl0`
+     * functions.
+     *
+     * For example, given the code
+     *
+     * @JvmInline
+     * sealed value class Top {
+     *   @JvmInline
+     *   value class I(val i: Int)
+     *   @JvmInline
+     *   value class L(val l: Long)
+     *
+     *   value class S(...)
+     * }
+     *
+     * First, we generate checks for noinline subclasses, and then for inline ones.
+     * For noinline classes we just generate reference equals, since we do not support user-defined equals for value classes yet.
+     *
+     * So, we generate the following function
+     *
+     * static fun Top.equals-impl0($this: Any?, other: Any?): Boolean = when {
+     *   $this is S -> $this === other
+     *   $this is Int && other is Int -> I.equals-impl0($this as Int?, other as Int?)
+     *   $this is Long && other is Long -> L.equals-impl0($this as Long?, other as Long?)
+     *   else -> false
+     * }
+     */
+    private fun buildSpecializedEqualsMethodForSealed(info: SealedInlineClassInfo) {
+        val irClass = info.top
+        val inlineSubclasses = info.inlineSubclasses
+        val noinlineSubclasses = info.noinlineSubclasses
+
+        val function = context.inlineClassReplacements.getSpecializedEqualsMethod(irClass, context.irBuiltIns)
+
+        with(context.createIrBuilder(function.symbol)) {
+            function.body = irBlockBody {
+                val left = irTemporary(
+                    coerceToSealedInlineClass(irGet(function.valueParameters[0]), irClass)
+                )
+
+                val right = irTemporary(
+                    coerceToSealedInlineClass(irGet(function.valueParameters[1]), irClass)
+                )
+
+                val branches = mutableListOf<IrBranch>()
+
+                for (noinlineSubclass in noinlineSubclasses) {
+                    branches += irBranch(
+                        irIs(irGet(function.valueParameters[0]), noinlineSubclass.owner.defaultType),
+                        irEqeqeq(irGet(left), irGet(right))
+                    )
+                }
+
+                for (inlineSubclass in inlineSubclasses) {
+                    val eq = this@JvmInlineClassLowering.context.inlineClassReplacements
+                        .getSpecializedEqualsMethod(inlineSubclass.owner, context.irBuiltIns)
+                    val underlyingType = context.irBuiltIns.getInlineClassUnderlyingType(inlineSubclass.owner)
+                    branches += irBranch(
+                        irAndand(
+                            irIs(irGet(function.valueParameters[0]), underlyingType),
+                            irIs(irGet(function.valueParameters[1]), underlyingType)
+                        ),
+                        irCall(eq).apply {
+                            putValueArgument(0, irGet(left))
+                            putValueArgument(1, irGet(right))
+                        }
+                    )
+                }
+
+                branches += irElseBranch(irFalse())
+
+                +irReturn(irWhen(context.irBuiltIns.booleanType, branches))
+            }
+        }
+
+        irClass.declarations += function
+    }
 }
 
 internal fun IrClass.isChildOfSealedInlineClass(): Boolean = superTypes.any { it.isInlineClassType() }
+
+private class SealedInlineClassInfo(
+    val top: IrClass,
+    val inlineSubclasses: Set<IrClassSymbol>,
+    val noinlineSubclasses: Set<IrClassSymbol>,
+    val sealedInlineSubclasses: List<IrClassSymbol>,
+    val methods: Set<MethodInfo>,
+) {
+    /*
+     * If child of sealed inline class fake overrides a method, we need to 'retarget' the call inside a giant switch-case in top
+     * See [rewriteOpenMethodsForSealed]
+     *
+     * [retargets] is a map from child class to the method, which should be called.
+     */
+    data class MethodInfo(
+        val symbol: IrSimpleFunctionSymbol,
+        val retargets: Map<IrClassSymbol, IrSimpleFunctionSymbol>,
+        val addToClass: Boolean
+    )
+
+    companion object {
+        fun analyze(top: IrClass, context: JvmBackendContext): SealedInlineClassInfo {
+            fun analyzeHierarchy(irClass: IrClass, predicate: (IrClassSymbol) -> Boolean): Set<IrClassSymbol> =
+                irClass.sealedSubclasses.flatMap {
+                    when {
+                        it.owner.isSealedInline -> analyzeHierarchy(it.owner, predicate)
+                        predicate(it) -> setOf(it)
+                        else -> emptySet()
+                    }
+                }.toSet()
+
+            val sealedInlineSubclasses = mutableListOf<IrClassSymbol>()
+
+            var cursor: IrClassSymbol? = top.symbol
+            while (cursor != null) {
+                sealedInlineSubclasses += cursor
+                cursor = cursor.owner.sealedSubclasses.find { it.owner.isSealedInline }
+            }
+
+            return SealedInlineClassInfo(
+                top,
+                analyzeHierarchy(top) { it.owner.isInline },
+                analyzeHierarchy(top) { !it.owner.isInline },
+                sealedInlineSubclasses.reversed(),
+                analyzeMethods(top, context)
+            )
+        }
+
+        private fun analyzeMethods(top: IrClass, context: JvmBackendContext): Set<MethodInfo> {
+            val res = mutableSetOf<MethodInfo>()
+            val visited = mutableSetOf<IrSimpleFunctionSymbol>()
+            // Methods, declared in top
+            for (method in top.functions) {
+                if (method.origin != IrDeclarationOrigin.DEFINED) continue
+                visited += method.symbol
+                val retargets = mutableMapOf<IrClassSymbol, IrSimpleFunctionSymbol>()
+                colorChildren(top, method.symbol, method.symbol, retargets, visited)
+                res += MethodInfo(method.symbol, retargets, addToClass = method.modality == Modality.ABSTRACT)
+            }
+
+            // Methods, declared in children
+            val retargetsInTop = mutableMapOf<IrSimpleFunction, MutableMap<IrClassSymbol, IrSimpleFunctionSymbol>>()
+            var currentClass = top
+            var doContinue = true
+            while (doContinue) {
+                doContinue = false
+                for (subclass in currentClass.sealedSubclasses) {
+                    if (subclass.owner.isSealedInline) {
+                        currentClass = subclass.owner
+                        doContinue = true
+                    }
+
+                    for (method in subclass.functions) {
+                        if (method.owner.origin != IrDeclarationOrigin.DEFINED) continue
+                        if (!visited.add(method)) continue
+
+                        val retargets = mutableMapOf<IrClassSymbol, IrSimpleFunctionSymbol>()
+                        colorChildren(subclass.owner, method, method, retargets, visited)
+                        if (method.owner.modality != Modality.ABSTRACT) {
+                            retargets[subclass] = method
+                        }
+
+                        val methodInTop =
+                            context.inlineClassReplacements.getSealedInlineClassChildFunctionInTop(top to method.owner.withoutReceiver())
+                        retargetsInTop.getOrPut(methodInTop) { mutableMapOf() }.putAll(retargets)
+                    }
+                }
+            }
+
+            for ((methodInTop, retargets) in retargetsInTop) {
+                res += MethodInfo(methodInTop.symbol, retargets, addToClass = true)
+            }
+
+            return res
+        }
+
+        /*
+         * Go down through hierarchy of sealed inline classes and find retargets of fake overrides
+         * See [MethodInfo]
+         */
+        private fun colorChildren(
+            irClass: IrClass,
+            target: IrSimpleFunctionSymbol,
+            method: IrSimpleFunctionSymbol,
+            retargets: MutableMap<IrClassSymbol, IrSimpleFunctionSymbol>,
+            visited: MutableSet<IrSimpleFunctionSymbol>
+        ) {
+            for (child in irClass.sealedSubclasses) {
+                val override = child.functions.find { function ->
+                    method.owner.attributeOwnerId in function.owner.overriddenSymbols.map { it.owner.attributeOwnerId }
+                } ?: continue
+                visited += override
+                if (override.owner.isFakeOverride) {
+                    retargets[child] = target
+                    colorChildren(child.owner, target, override, retargets, visited)
+                } else {
+                    retargets[child] = override
+                    colorChildren(child.owner, override, override, retargets, visited)
+                }
+            }
+        }
+    }
+}
+
+private fun IrSimpleFunction.isFakeOverrideOfDefaultMethod(): Boolean =
+    isFakeOverride && overriddenSymbols.any { it.owner.parentAsClass.isInterface && it.owner.modality != Modality.ABSTRACT }
