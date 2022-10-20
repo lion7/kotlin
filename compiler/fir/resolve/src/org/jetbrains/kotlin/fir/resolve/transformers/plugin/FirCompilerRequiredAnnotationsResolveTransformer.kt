@@ -41,7 +41,7 @@ import org.jetbrains.kotlin.name.StandardClassIds.Annotations.WasExperimental
 class FirCompilerRequiredAnnotationsResolveProcessor(
     session: FirSession,
     scopeSession: ScopeSession
-) : FirGlobalResolveProcessor(session, scopeSession) {
+) : FirGlobalResolveProcessor(session, scopeSession, FirResolvePhase.COMPILER_REQUIRED_ANNOTATIONS) {
 
     override fun process(files: Collection<FirFile>) {
         val transformer = FirCompilerRequiredAnnotationsResolveTransformer(session, scopeSession)

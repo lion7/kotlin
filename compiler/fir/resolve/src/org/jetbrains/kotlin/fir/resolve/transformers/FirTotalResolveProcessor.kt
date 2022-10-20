@@ -15,8 +15,10 @@ import org.jetbrains.kotlin.fir.resolve.transformers.body.resolve.FirImplicitTyp
 import org.jetbrains.kotlin.fir.resolve.transformers.contracts.FirContractResolveProcessor
 import org.jetbrains.kotlin.fir.resolve.transformers.mpp.FirExpectActualMatcherProcessor
 import org.jetbrains.kotlin.fir.resolve.transformers.plugin.*
+import org.jetbrains.kotlin.fir.symbols.FirCompilerLazyDeclarationResolver
+import org.jetbrains.kotlin.fir.symbols.lazyDeclarationResolver
 
-class FirTotalResolveProcessor(session: FirSession) {
+class FirTotalResolveProcessor(private val session: FirSession) {
     val scopeSession: ScopeSession = ScopeSession()
 
     private val processors: List<FirResolveProcessor> = createAllCompilerResolveProcessors(
@@ -26,18 +28,20 @@ class FirTotalResolveProcessor(session: FirSession) {
 
     fun process(files: List<FirFile>) {
         for (processor in processors) {
-            processor.beforePhase()
-            when (processor) {
-                is FirTransformerBasedResolveProcessor -> {
-                    for (file in files) {
-                        processor.processFile(file)
+            (session.lazyDeclarationResolver as FirCompilerLazyDeclarationResolver).controlLazyResolveContractsCheckingInside(processor.phase) {
+                processor.beforePhase()
+                when (processor) {
+                    is FirTransformerBasedResolveProcessor -> {
+                        for (file in files) {
+                            processor.processFile(file)
+                        }
+                    }
+                    is FirGlobalResolveProcessor -> {
+                        processor.process(files)
                     }
                 }
-                is FirGlobalResolveProcessor -> {
-                    processor.process(files)
-                }
+                processor.afterPhase()
             }
-            processor.afterPhase()
         }
     }
 }

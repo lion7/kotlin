@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.fir.resolve.providers.FirProvider
 import org.jetbrains.kotlin.fir.resolve.providers.FirSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.providers.impl.FirCloneableSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.scopes.wrapScopeWithJvmMapped
-import org.jetbrains.kotlin.fir.resolve.transformers.FirCompilerLazyDeclarationResolver
+import org.jetbrains.kotlin.fir.symbols.FirCompilerLazyDeclarationResolver
 import org.jetbrains.kotlin.fir.scopes.FirKotlinScopeProvider
 import org.jetbrains.kotlin.fir.session.registerCommonComponents
 import org.jetbrains.kotlin.fir.session.registerModuleData
@@ -50,7 +50,7 @@ class LLFirBuiltinsSessionFactory(
                 bindSession(this@session)
             }
             registerIdeComponents(project)
-            register(FirLazyDeclarationResolver::class, FirCompilerLazyDeclarationResolver)
+            register(FirLazyDeclarationResolver::class, LLFirLazyDeclarationResolveForLibrariesSession)
             registerCommonComponents(LanguageVersionSettingsImpl.DEFAULT/*TODO*/)
             registerModuleData(moduleData)
 

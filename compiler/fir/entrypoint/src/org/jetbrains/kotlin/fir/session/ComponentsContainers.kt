@@ -30,7 +30,7 @@ import org.jetbrains.kotlin.fir.resolve.calls.jvm.JvmCallConflictResolverFactory
 import org.jetbrains.kotlin.fir.resolve.inference.InferenceComponents
 import org.jetbrains.kotlin.fir.resolve.providers.impl.FirQualifierResolverImpl
 import org.jetbrains.kotlin.fir.resolve.providers.impl.FirTypeResolverImpl
-import org.jetbrains.kotlin.fir.resolve.transformers.FirCompilerLazyDeclarationResolver
+import org.jetbrains.kotlin.fir.symbols.FirCompilerLazyDeclarationResolver
 import org.jetbrains.kotlin.fir.resolve.transformers.PlatformSupertypeUpdater
 import org.jetbrains.kotlin.fir.resolve.transformers.plugin.GeneratedClassIndex
 import org.jetbrains.kotlin.fir.scopes.FirOverrideService

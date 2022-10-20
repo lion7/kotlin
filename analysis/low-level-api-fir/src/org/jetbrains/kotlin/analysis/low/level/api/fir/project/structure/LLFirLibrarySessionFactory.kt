@@ -16,16 +16,18 @@ import org.jetbrains.kotlin.config.LanguageVersionSettingsImpl
 import org.jetbrains.kotlin.fir.PrivateSessionConstructor
 import org.jetbrains.kotlin.fir.SessionConfiguration
 import org.jetbrains.kotlin.fir.backend.jvm.FirJvmTypeMapper
+import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
 import org.jetbrains.kotlin.fir.resolve.providers.FirProvider
 import org.jetbrains.kotlin.fir.resolve.providers.FirSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.providers.symbolProvider
 import org.jetbrains.kotlin.fir.resolve.scopes.wrapScopeWithJvmMapped
-import org.jetbrains.kotlin.fir.resolve.transformers.FirCompilerLazyDeclarationResolver
+import org.jetbrains.kotlin.fir.symbols.FirCompilerLazyDeclarationResolver
 import org.jetbrains.kotlin.fir.scopes.FirKotlinScopeProvider
 import org.jetbrains.kotlin.fir.session.registerCommonComponents
 import org.jetbrains.kotlin.fir.session.registerCommonJavaComponents
 import org.jetbrains.kotlin.fir.session.registerJavaSpecificResolveComponents
 import org.jetbrains.kotlin.fir.session.registerModuleData
+import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.FirLazyDeclarationResolver
 import org.jetbrains.kotlin.resolve.jvm.modules.JavaModuleResolver
 
@@ -51,7 +53,7 @@ class LLFirLibrarySessionFactory(
             val moduleData = LLFirModuleData(ktLibraryModule).apply { bindSession(this@session) }
             registerModuleData(moduleData)
             registerIdeComponents(project)
-            register(FirLazyDeclarationResolver::class, FirCompilerLazyDeclarationResolver)
+            register(FirLazyDeclarationResolver::class, LLFirLazyDeclarationResolveForLibrariesSession)
             registerCommonComponents(LanguageVersionSettingsImpl.DEFAULT/*TODO*/)
             registerCommonJavaComponents(JavaModuleResolver.getInstance(project))
             registerJavaSpecificResolveComponents()
@@ -84,5 +86,5 @@ class LLFirLibrarySessionFactory(
         fun getInstance(project: Project): LLFirLibrarySessionFactory =
             project.getService(LLFirLibrarySessionFactory::class.java)
     }
-
 }
+
