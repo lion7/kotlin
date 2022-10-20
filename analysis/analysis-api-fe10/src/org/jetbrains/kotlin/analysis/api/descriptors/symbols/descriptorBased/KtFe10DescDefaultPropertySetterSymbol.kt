@@ -64,7 +64,7 @@ class KtFe10DescDefaultPropertySetterSymbol(
     override val psi: PsiElement?
         get() = withValidityAssertion { null }
 
-    override val receiver: KtReceiverParameterSymbol?
+    override val receiverParameter: KtReceiverParameterSymbol?
         get() = withValidityAssertion { propertyDescriptor.extensionReceiverParameter?.toKtReceiverParameterSymbol(analysisContext) }
 
     override val modality: Modality

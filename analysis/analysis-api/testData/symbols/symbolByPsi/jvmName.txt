@@ -17,7 +17,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiver: null
+    receiverParameter: null
     returnType: kotlin/Int
     symbolKind: ACCESSOR
     typeParameters: []
@@ -38,7 +38,7 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: i
   origin: SOURCE
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   setter: KtPropertySetterSymbol:
     annotationsList: [
@@ -68,11 +68,11 @@ KtKotlinPropertySymbol:
       isVararg: false
       name: <set-?>
       origin: SOURCE
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
-    receiver: null
+    receiverParameter: null
     returnType: kotlin/Unit
     symbolKind: ACCESSOR
     typeParameters: []
@@ -90,7 +90,7 @@ KtKotlinPropertySymbol:
         isVararg: false
         name: <set-?>
         origin: SOURCE
-        receiver: null
+        receiverParameter: null
         returnType: kotlin/Int
         symbolKind: LOCAL
         typeParameters: []
@@ -126,7 +126,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiver: null
+    receiverParameter: null
     returnType: kotlin/Int
     symbolKind: ACCESSOR
     typeParameters: []
@@ -147,7 +147,7 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: j
   origin: SOURCE
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   setter: KtPropertySetterSymbol:
     annotationsList: [
@@ -177,11 +177,11 @@ KtKotlinPropertySymbol:
       isVararg: false
       name: value
       origin: SOURCE
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
-    receiver: null
+    receiverParameter: null
     returnType: kotlin/Unit
     symbolKind: ACCESSOR
     typeParameters: []
@@ -199,7 +199,7 @@ KtKotlinPropertySymbol:
         isVararg: false
         name: value
         origin: SOURCE
-        receiver: null
+        receiverParameter: null
         returnType: kotlin/Int
         symbolKind: LOCAL
         typeParameters: []

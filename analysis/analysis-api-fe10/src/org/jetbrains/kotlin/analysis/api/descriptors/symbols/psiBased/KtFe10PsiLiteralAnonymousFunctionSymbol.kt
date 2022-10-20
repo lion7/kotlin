@@ -54,7 +54,7 @@ internal class KtFe10PsiLiteralAnonymousFunctionSymbol(
             descriptor?.returnType?.toKtType(analysisContext) ?: createErrorType()
         }
 
-    override val receiver: KtReceiverParameterSymbol?
+    override val receiverParameter: KtReceiverParameterSymbol?
         get() = withValidityAssertion {
             if (!psi.isExtensionDeclaration()) {
                 return null

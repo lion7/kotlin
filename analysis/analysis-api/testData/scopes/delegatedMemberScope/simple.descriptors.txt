@@ -14,7 +14,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: OPEN
     origin: DELEGATED
-    receiver: KtReceiverParameterSymbol:
+    receiverParameter: KtReceiverParameterSymbol:
       annotationsList: []
       origin: SOURCE
       type: kotlin/Int
@@ -38,7 +38,7 @@ KtKotlinPropertySymbol:
   modality: OPEN
   name: zoo
   origin: DELEGATED
-  receiver: KtReceiverParameterSymbol:
+  receiverParameter: KtReceiverParameterSymbol:
     annotationsList: []
     origin: SOURCE
     type: kotlin/Int
@@ -68,11 +68,11 @@ KtKotlinPropertySymbol:
       isVararg: false
       name: value
       origin: SOURCE
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Unit
       symbolKind: LOCAL
       typeParameters: []
-    receiver: KtReceiverParameterSymbol:
+    receiverParameter: KtReceiverParameterSymbol:
       annotationsList: []
       origin: SOURCE
       type: kotlin/Int
@@ -93,7 +93,7 @@ KtKotlinPropertySymbol:
         isVararg: false
         name: value
         origin: SOURCE
-        receiver: null
+        receiverParameter: null
         returnType: kotlin/Unit
         symbolKind: LOCAL
         typeParameters: []
@@ -127,7 +127,7 @@ KtFunctionSymbol:
   modality: OPEN
   name: foo
   origin: DELEGATED
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Unit
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -154,7 +154,7 @@ KtFunctionSymbol:
   modality: OPEN
   name: smth
   origin: DELEGATED
-  receiver: KtReceiverParameterSymbol:
+  receiverParameter: KtReceiverParameterSymbol:
     annotationsList: []
     origin: SOURCE
     type: kotlin/Int
@@ -183,7 +183,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: OPEN
     origin: DELEGATED
-    receiver: null
+    receiverParameter: null
     returnType: kotlin/Int
     symbolKind: ACCESSOR
     typeParameters: []
@@ -204,7 +204,7 @@ KtKotlinPropertySymbol:
   modality: OPEN
   name: foo
   origin: DELEGATED
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   setter: null
   symbolKind: CLASS_MEMBER
@@ -234,7 +234,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: OPEN
     origin: DELEGATED
-    receiver: null
+    receiverParameter: null
     returnType: kotlin/Long
     symbolKind: ACCESSOR
     typeParameters: []
@@ -255,7 +255,7 @@ KtKotlinPropertySymbol:
   modality: OPEN
   name: bar
   origin: DELEGATED
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Long
   setter: KtPropertySetterSymbol:
     annotationsList: []
@@ -282,11 +282,11 @@ KtKotlinPropertySymbol:
       isVararg: false
       name: value
       origin: SOURCE
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Long
       symbolKind: LOCAL
       typeParameters: []
-    receiver: null
+    receiverParameter: null
     returnType: kotlin/Unit
     symbolKind: ACCESSOR
     typeParameters: []
@@ -304,7 +304,7 @@ KtKotlinPropertySymbol:
         isVararg: false
         name: value
         origin: SOURCE
-        receiver: null
+        receiverParameter: null
         returnType: kotlin/Long
         symbolKind: LOCAL
         typeParameters: []
@@ -337,7 +337,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: OPEN
     origin: DELEGATED
-    receiver: KtReceiverParameterSymbol:
+    receiverParameter: KtReceiverParameterSymbol:
       annotationsList: []
       origin: SOURCE
       type: kotlin/Int
@@ -361,7 +361,7 @@ KtKotlinPropertySymbol:
   modality: OPEN
   name: doo
   origin: DELEGATED
-  receiver: KtReceiverParameterSymbol:
+  receiverParameter: KtReceiverParameterSymbol:
     annotationsList: []
     origin: SOURCE
     type: kotlin/Int

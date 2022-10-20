@@ -14,7 +14,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiver: null
+    receiverParameter: null
     returnType: kotlin/Int
     symbolKind: ACCESSOR
     typeParameters: []
@@ -35,7 +35,7 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: x
   origin: SOURCE
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   setter: null
   symbolKind: TOP_LEVEL
@@ -64,7 +64,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiver: KtReceiverParameterSymbol:
+    receiverParameter: KtReceiverParameterSymbol:
       annotationsList: []
       origin: SOURCE
       type: kotlin/Int
@@ -88,7 +88,7 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: y
   origin: SOURCE
-  receiver: KtReceiverParameterSymbol:
+  receiverParameter: KtReceiverParameterSymbol:
     annotationsList: []
     origin: SOURCE
     type: kotlin/Int
@@ -120,7 +120,7 @@ KtKotlinPropertySymbol:
     isOverride: false
     modality: FINAL
     origin: SOURCE
-    receiver: KtReceiverParameterSymbol:
+    receiverParameter: KtReceiverParameterSymbol:
       annotationsList: []
       origin: SOURCE
       type: kotlin/Short
@@ -144,7 +144,7 @@ KtKotlinPropertySymbol:
   modality: FINAL
   name: get
   origin: SOURCE
-  receiver: KtReceiverParameterSymbol:
+  receiverParameter: KtReceiverParameterSymbol:
     annotationsList: []
     origin: SOURCE
     type: kotlin/Short
@@ -174,11 +174,11 @@ KtKotlinPropertySymbol:
       isVararg: false
       name: value
       origin: SOURCE
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Long
       symbolKind: LOCAL
       typeParameters: []
-    receiver: KtReceiverParameterSymbol:
+    receiverParameter: KtReceiverParameterSymbol:
       annotationsList: []
       origin: SOURCE
       type: kotlin/Short
@@ -199,7 +199,7 @@ KtKotlinPropertySymbol:
         isVararg: false
         name: value
         origin: SOURCE
-        receiver: null
+        receiverParameter: null
         returnType: kotlin/Long
         symbolKind: LOCAL
         typeParameters: []

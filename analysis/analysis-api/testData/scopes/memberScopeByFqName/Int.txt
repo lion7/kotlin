@@ -18,7 +18,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: and
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -36,7 +36,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
@@ -66,7 +66,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: compareTo
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -84,7 +84,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Byte
       symbolKind: LOCAL
       typeParameters: []
@@ -114,7 +114,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: compareTo
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -132,7 +132,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Double
       symbolKind: LOCAL
       typeParameters: []
@@ -162,7 +162,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: compareTo
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -180,7 +180,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Float
       symbolKind: LOCAL
       typeParameters: []
@@ -210,7 +210,7 @@ KtFunctionSymbol:
   modality: OPEN
   name: compareTo
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -228,7 +228,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
@@ -258,7 +258,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: compareTo
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -276,7 +276,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Long
       symbolKind: LOCAL
       typeParameters: []
@@ -306,7 +306,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: compareTo
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -324,7 +324,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Short
       symbolKind: LOCAL
       typeParameters: []
@@ -351,7 +351,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: dec
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -381,7 +381,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: div
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -399,7 +399,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Byte
       symbolKind: LOCAL
       typeParameters: []
@@ -429,7 +429,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: div
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Double
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -447,7 +447,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Double
       symbolKind: LOCAL
       typeParameters: []
@@ -477,7 +477,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: div
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Float
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -495,7 +495,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Float
       symbolKind: LOCAL
       typeParameters: []
@@ -525,7 +525,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: div
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -543,7 +543,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
@@ -573,7 +573,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: div
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Long
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -591,7 +591,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Long
       symbolKind: LOCAL
       typeParameters: []
@@ -621,7 +621,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: div
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -639,7 +639,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Short
       symbolKind: LOCAL
       typeParameters: []
@@ -669,7 +669,7 @@ KtFunctionSymbol:
   modality: OPEN
   name: equals
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Boolean
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -687,7 +687,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Any?
       symbolKind: LOCAL
       typeParameters: []
@@ -714,7 +714,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: inc
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -744,7 +744,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: inv
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -774,7 +774,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: minus
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -792,7 +792,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Byte
       symbolKind: LOCAL
       typeParameters: []
@@ -822,7 +822,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: minus
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Double
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -840,7 +840,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Double
       symbolKind: LOCAL
       typeParameters: []
@@ -870,7 +870,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: minus
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Float
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -888,7 +888,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Float
       symbolKind: LOCAL
       typeParameters: []
@@ -918,7 +918,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: minus
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -936,7 +936,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
@@ -966,7 +966,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: minus
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Long
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -984,7 +984,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Long
       symbolKind: LOCAL
       typeParameters: []
@@ -1014,7 +1014,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: minus
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1032,7 +1032,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Short
       symbolKind: LOCAL
       typeParameters: []
@@ -1062,7 +1062,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: or
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1080,7 +1080,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
@@ -1110,7 +1110,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: plus
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1128,7 +1128,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Byte
       symbolKind: LOCAL
       typeParameters: []
@@ -1158,7 +1158,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: plus
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Double
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1176,7 +1176,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Double
       symbolKind: LOCAL
       typeParameters: []
@@ -1206,7 +1206,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: plus
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Float
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1224,7 +1224,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Float
       symbolKind: LOCAL
       typeParameters: []
@@ -1254,7 +1254,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: plus
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1272,7 +1272,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
@@ -1302,7 +1302,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: plus
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Long
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1320,7 +1320,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Long
       symbolKind: LOCAL
       typeParameters: []
@@ -1350,7 +1350,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: plus
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1368,7 +1368,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Short
       symbolKind: LOCAL
       typeParameters: []
@@ -1395,7 +1395,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: rangeTo
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/ranges/IntRange
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1413,7 +1413,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Byte
       symbolKind: LOCAL
       typeParameters: []
@@ -1440,7 +1440,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: rangeTo
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/ranges/IntRange
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1458,7 +1458,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
@@ -1485,7 +1485,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: rangeTo
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/ranges/LongRange
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1503,7 +1503,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Long
       symbolKind: LOCAL
       typeParameters: []
@@ -1530,7 +1530,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: rangeTo
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/ranges/IntRange
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1548,7 +1548,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Short
       symbolKind: LOCAL
       typeParameters: []
@@ -1580,7 +1580,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: rangeUntil
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/ranges/IntRange
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1598,7 +1598,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Byte
       symbolKind: LOCAL
       typeParameters: []
@@ -1630,7 +1630,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: rangeUntil
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/ranges/IntRange
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1648,7 +1648,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
@@ -1680,7 +1680,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: rangeUntil
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/ranges/LongRange
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1698,7 +1698,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Long
       symbolKind: LOCAL
       typeParameters: []
@@ -1730,7 +1730,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: rangeUntil
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/ranges/IntRange
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1748,7 +1748,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Short
       symbolKind: LOCAL
       typeParameters: []
@@ -1780,7 +1780,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: rem
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1798,7 +1798,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Byte
       symbolKind: LOCAL
       typeParameters: []
@@ -1830,7 +1830,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: rem
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Double
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1848,7 +1848,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Double
       symbolKind: LOCAL
       typeParameters: []
@@ -1880,7 +1880,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: rem
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Float
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1898,7 +1898,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Float
       symbolKind: LOCAL
       typeParameters: []
@@ -1930,7 +1930,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: rem
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1948,7 +1948,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
@@ -1980,7 +1980,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: rem
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Long
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -1998,7 +1998,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Long
       symbolKind: LOCAL
       typeParameters: []
@@ -2030,7 +2030,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: rem
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2048,7 +2048,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Short
       symbolKind: LOCAL
       typeParameters: []
@@ -2078,7 +2078,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: shl
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2096,7 +2096,7 @@ KtFunctionSymbol:
       isVararg: false
       name: bitCount
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
@@ -2126,7 +2126,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: shr
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2144,7 +2144,7 @@ KtFunctionSymbol:
       isVararg: false
       name: bitCount
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
@@ -2174,7 +2174,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: times
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2192,7 +2192,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Byte
       symbolKind: LOCAL
       typeParameters: []
@@ -2222,7 +2222,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: times
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Double
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2240,7 +2240,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Double
       symbolKind: LOCAL
       typeParameters: []
@@ -2270,7 +2270,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: times
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Float
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2288,7 +2288,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Float
       symbolKind: LOCAL
       typeParameters: []
@@ -2318,7 +2318,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: times
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2336,7 +2336,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
@@ -2366,7 +2366,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: times
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Long
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2384,7 +2384,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Long
       symbolKind: LOCAL
       typeParameters: []
@@ -2414,7 +2414,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: times
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2432,7 +2432,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Short
       symbolKind: LOCAL
       typeParameters: []
@@ -2462,7 +2462,7 @@ KtFunctionSymbol:
   modality: OPEN
   name: toByte
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Byte
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2492,7 +2492,7 @@ KtFunctionSymbol:
   modality: OPEN
   name: toChar
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Char
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2522,7 +2522,7 @@ KtFunctionSymbol:
   modality: OPEN
   name: toDouble
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Double
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2552,7 +2552,7 @@ KtFunctionSymbol:
   modality: OPEN
   name: toFloat
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Float
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2582,7 +2582,7 @@ KtFunctionSymbol:
   modality: OPEN
   name: toInt
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2612,7 +2612,7 @@ KtFunctionSymbol:
   modality: OPEN
   name: toLong
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Long
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2642,7 +2642,7 @@ KtFunctionSymbol:
   modality: OPEN
   name: toShort
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Short
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2672,7 +2672,7 @@ KtFunctionSymbol:
   modality: OPEN
   name: toString
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/String
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2702,7 +2702,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: unaryMinus
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2732,7 +2732,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: unaryPlus
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2762,7 +2762,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: ushr
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2780,7 +2780,7 @@ KtFunctionSymbol:
       isVararg: false
       name: bitCount
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
@@ -2810,7 +2810,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: xor
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2828,7 +2828,7 @@ KtFunctionSymbol:
       isVararg: false
       name: other
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
@@ -2855,7 +2855,7 @@ KtFunctionSymbol:
   modality: OPEN
   name: hashCode
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2897,7 +2897,7 @@ KtConstructorSymbol:
   isExtension: false
   isPrimary: false
   origin: JAVA
-  receiver: null
+  receiverParameter: null
   returnType: java/lang/Integer
   symbolKind: CLASS_MEMBER
   typeParameters: []
@@ -2915,7 +2915,7 @@ KtConstructorSymbol:
       isVararg: false
       name: value
       origin: SUBSTITUTION_OVERRIDE
-      receiver: null
+      receiverParameter: null
       returnType: kotlin/Int
       symbolKind: LOCAL
       typeParameters: []
@@ -2933,7 +2933,7 @@ KtConstructorSymbol:
   isExtension: false
   isPrimary: true
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/Int
   symbolKind: CLASS_MEMBER
   typeParameters: []

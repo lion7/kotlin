@@ -15,7 +15,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: listOf
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/collections/List<T>
   symbolKind: TOP_LEVEL
   typeParameters: [
@@ -35,7 +35,7 @@ KtFunctionSymbol:
       isVararg: false
       name: element
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: T
       symbolKind: LOCAL
       typeParameters: []
@@ -64,7 +64,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: listOf
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/collections/List<T>
   symbolKind: TOP_LEVEL
   typeParameters: [
@@ -92,7 +92,7 @@ KtFunctionSymbol:
   modality: FINAL
   name: listOf
   origin: LIBRARY
-  receiver: null
+  receiverParameter: null
   returnType: kotlin/collections/List<T>
   symbolKind: TOP_LEVEL
   typeParameters: [
@@ -112,7 +112,7 @@ KtFunctionSymbol:
       isVararg: true
       name: elements
       origin: LIBRARY
-      receiver: null
+      receiverParameter: null
       returnType: T
       symbolKind: LOCAL
       typeParameters: []
