@@ -16,21 +16,17 @@
 package org.jetbrains.kotlin.ir.util
 
 import org.jetbrains.kotlin.analyzer.CompilationErrorException
-import org.jetbrains.kotlin.ir.declarations.IrDeclaration
 import org.jetbrains.kotlin.ir.linkage.IrProvider
 import org.jetbrains.kotlin.ir.linkage.KotlinIrLinkerInternalException
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 
 class ExternalDependenciesGenerator(
-    val symbolTable: SymbolTable,
+    private val symbolTable: SymbolTable,
     private val irProviders: List<IrProvider>
 ) {
-
     fun generateUnboundSymbolsAsDependencies() {
         // There should be at most one DeclarationStubGenerator (none in closed world?)
-        irProviders.singleOrNull { it is DeclarationStubGenerator }?.let {
-            (it as DeclarationStubGenerator).unboundSymbolGeneration = true
-        }
+        irProviders.filterIsInstance<DeclarationStubGenerator>().singleOrNull()?.run { unboundSymbolGeneration = true }
 
         // Deserializing a reference may lead to new unbound references, so we loop until none are left.
         try {
@@ -44,7 +40,7 @@ class ExternalDependenciesGenerator(
                 for (symbol in unbound) {
                     // Symbol could get bound as a side effect of deserializing other symbols.
                     if (!symbol.isBound) {
-                        irProviders.getDeclaration(symbol)
+                        irProviders.firstNotNullOfOrNull { provider -> provider.getDeclaration(symbol) }
                     }
                 }
                 // We wait for the unbound to stabilize on fake overrides.
@@ -54,8 +50,3 @@ class ExternalDependenciesGenerator(
         }
     }
 }
-
-fun List<IrProvider>.getDeclaration(symbol: IrSymbol): IrDeclaration? =
-    firstNotNullOfOrNull { provider ->
-        provider.getDeclaration(symbol)
-    }
