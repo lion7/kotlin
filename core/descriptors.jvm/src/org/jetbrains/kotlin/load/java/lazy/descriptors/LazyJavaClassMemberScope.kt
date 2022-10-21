@@ -812,8 +812,8 @@ class LazyJavaClassMemberScope(
     }
 
     private val nestedClasses = c.storageManager.createMemoizedFunctionWithNullableValues { name: Name ->
-        when (name) {
-            in nestedClassIndex() -> {
+//        when (name) {
+//            in nestedClassIndex() -> {
                 c.components.finder.findClass(
                     JavaClassFinder.Request(
                         ownerDescriptor.classId!!.createNestedClassId(name),
@@ -823,32 +823,32 @@ class LazyJavaClassMemberScope(
                     LazyJavaClassDescriptor(c, ownerDescriptor, it)
                         .also(c.components.javaClassesTracker::reportClass)
                 }
-            }
-
-            in generatedNestedClassNames() -> {
-                val classes = with(c) {
-                    buildList { c.components.syntheticPartsProvider.generateNestedClass(ownerDescriptor, name, this) }
-                }
-                when (classes.size) {
-                    0 -> null
-                    1 -> classes.single()
-                    else -> error("Multiple classes with same name are generated: $classes")
-                }
-            }
-
-            else -> {
-                val field = enumEntryIndex()[name]
-                if (field != null) {
-                    val enumMemberNames: NotNullLazyValue<Set<Name>> = c.storageManager.createLazyValue {
-                        getFunctionNames() + getVariableNames()
-                    }
-                    EnumEntrySyntheticClassDescriptor.create(
-                        c.storageManager, ownerDescriptor, name, enumMemberNames, c.resolveAnnotations(field),
-                        c.components.sourceElementFactory.source(field)
-                    )
-                } else null
-            }
-        }
+//            }
+//
+//            in generatedNestedClassNames() -> {
+//                val classes = with(c) {
+//                    buildList { c.components.syntheticPartsProvider.generateNestedClass(ownerDescriptor, name, this) }
+//                }
+//                when (classes.size) {
+//                    0 -> null
+//                    1 -> classes.single()
+//                    else -> error("Multiple classes with same name are generated: $classes")
+//                }
+//            }
+//
+//            else -> {
+//                val field = enumEntryIndex()[name]
+//                if (field != null) {
+//                    val enumMemberNames: NotNullLazyValue<Set<Name>> = c.storageManager.createLazyValue {
+//                        getFunctionNames() + getVariableNames()
+//                    }
+//                    EnumEntrySyntheticClassDescriptor.create(
+//                        c.storageManager, ownerDescriptor, name, enumMemberNames, c.resolveAnnotations(field),
+//                        c.components.sourceElementFactory.source(field)
+//                    )
+//                } else null
+//            }
+//        }
     }
 
     override fun getDispatchReceiverParameter(): ReceiverParameterDescriptor? =

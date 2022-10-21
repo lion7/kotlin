@@ -5,18 +5,21 @@
 
 package org.jetbrains.kotlin.lombok
 
-import org.jetbrains.kotlin.descriptors.ClassConstructorDescriptor
-import org.jetbrains.kotlin.descriptors.ClassDescriptor
-import org.jetbrains.kotlin.descriptors.FunctionDescriptor
-import org.jetbrains.kotlin.descriptors.SimpleFunctionDescriptor
+import org.jetbrains.kotlin.descriptors.*
+import org.jetbrains.kotlin.incremental.components.NoLookupLocation
+import org.jetbrains.kotlin.js.descriptorUtils.nameIfStandardType
 import org.jetbrains.kotlin.load.java.lazy.LazyJavaResolverContext
 import org.jetbrains.kotlin.load.java.lazy.descriptors.LazyJavaClassDescriptor
+import org.jetbrains.kotlin.load.java.lazy.descriptors.LazyJavaClassMemberScope
 import org.jetbrains.kotlin.load.java.lazy.descriptors.SyntheticJavaClassDescriptor
 import org.jetbrains.kotlin.lombok.config.LombokConfig
 import org.jetbrains.kotlin.lombok.processor.*
 import org.jetbrains.kotlin.lombok.utils.getJavaClass
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.resolve.DescriptorUtils
 import org.jetbrains.kotlin.resolve.jvm.SyntheticJavaPartsProvider
+import org.jetbrains.kotlin.resolve.scopes.DescriptorKindFilter
+import org.jetbrains.kotlin.resolve.scopes.MemberScope
 import java.util.*
 
 /**
@@ -63,7 +66,11 @@ class LombokSyntheticJavaPartsProvider(config: LombokConfig) : SyntheticJavaPart
 
     context(LazyJavaResolverContext)
     override fun generateStaticFunctions(thisDescriptor: ClassDescriptor, name: Name, result: MutableCollection<SimpleFunctionDescriptor>) {
-        val functions = getSyntheticParts(thisDescriptor).staticFunctions.filter { it.name == name }
+        val syntheticParts = getSyntheticParts(thisDescriptor)
+        val functions = syntheticParts.staticFunctions.filter { it.name == name }
+        functions.mapNotNull { it.returnType }
+            .mapNotNull{ returnType -> syntheticParts.classes.firstOrNull { it == returnType.constructor.declarationDescriptor }}
+            .mapNotNull {  thisDescriptor.unsubstitutedInnerClassesScope.getContributedClassifier(it.name, NoLookupLocation.FROM_SYNTHETIC_SCOPE) }
         addNonExistent(result, functions)
     }
 
