@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.*
 import org.jetbrains.kotlin.ElementTypeUtils.isExpression
 import org.jetbrains.kotlin.KtNodeTypes.*
 import org.jetbrains.kotlin.builtins.StandardNames
+import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibilities
@@ -65,6 +66,7 @@ class DeclarationsConverter(
     private val diagnosticsReporter: DiagnosticReporter? = null,
     private val diagnosticContext: DiagnosticContext? = null
 ) : BaseConverter(session, tree, context) {
+    val isSafeExternalEnumOn = session.languageVersionSettings.supportsFeature(LanguageFeature.SafeExternalEnums)
 
     @OptIn(PrivateForInline::class)
     inline fun <R> withOffset(newOffset: Int, block: () -> R): R {
@@ -495,7 +497,7 @@ class DeclarationsConverter(
                     when {
                         modifiers.isEnum() && (classKind == ClassKind.ENUM_CLASS) && superTypeRefs.all { !it.isEnum } -> {
                             delegatedSuperTypeRef = buildResolvedTypeRef {
-                                val superType = if (modifiers.hasExternal()) implicitExternalEnumType else implicitEnumType
+                                val superType = if (isSafeExternalEnumOn && modifiers.hasExternal()) implicitExternalEnumType else implicitEnumType
                                 type = ConeClassLikeTypeImpl(
                                     superType.type.lookupTag,
                                     arrayOf(selfType.type),
