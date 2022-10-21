@@ -33,14 +33,34 @@ open class FirDependenciesSymbolProviderImpl(session: FirSession) : FirDependenc
     protected open val dependencyProviders by lazy {
         val moduleData =
             session.nullableModuleData ?: error("FirDependenciesSymbolProvider should not be created if there are no dependencies")
-        val result = (moduleData.dependencies + moduleData.friendDependencies + moduleData.dependsOnDependencies)
+        val result = mutableListOf<FirSymbolProvider>()
+        val visited = mutableSetOf<FirSymbolProvider>()
+        (moduleData.dependencies + moduleData.friendDependencies + moduleData.dependsOnDependencies)
             .mapNotNull { session.sessionProvider?.getSession(it) }
-            .sortedBy { it.kind }
             .map { it.symbolProvider }
-        result.flatMap {
-            when (it) {
-                is FirCompositeSymbolProvider -> it.providers
-                else -> listOf(it)
+            .forEach { it.loadProvidersTo(result, visited, 0) }
+        result.sortedBy { it.session.kind }
+    }
+
+    private fun FirSymbolProvider.loadProvidersTo(
+        result: MutableList<FirSymbolProvider>,
+        visited: MutableSet<FirSymbolProvider>,
+        level: Int
+    ) {
+        if (!visited.add(this)) return
+        when {
+            this is FirDependenciesSymbolProviderImpl -> {
+                for (provider in dependencyProviders) {
+                    provider.loadProvidersTo(result, visited, level + 1)
+                }
+            }
+            this is FirCompositeSymbolProvider -> {
+                for (provider in providers) {
+                    provider.loadProvidersTo(result, visited, level)
+                }
+            }
+            level == 0 || session.kind == FirSession.Kind.Source -> {
+                result.add(this)
             }
         }
     }

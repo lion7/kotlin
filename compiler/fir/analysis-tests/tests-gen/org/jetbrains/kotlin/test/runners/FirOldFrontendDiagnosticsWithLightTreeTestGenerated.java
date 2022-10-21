@@ -484,6 +484,18 @@ public class FirOldFrontendDiagnosticsWithLightTreeTestGenerated extends Abstrac
         }
 
         @Test
+        @TestMetadata("noLibraryProvidersDuplication.kt")
+        public void testNoLibraryProvidersDuplication() throws Exception {
+            runTest("compiler/testData/diagnostics/tests/noLibraryProvidersDuplication.kt");
+        }
+
+        @Test
+        @TestMetadata("noSymbolProvidersDuplicationInDiamond.kt")
+        public void testNoSymbolProvidersDuplicationInDiamond() throws Exception {
+            runTest("compiler/testData/diagnostics/tests/noSymbolProvidersDuplicationInDiamond.kt");
+        }
+
+        @Test
         @TestMetadata("Nullability.kt")
         public void testNullability() throws Exception {
             runTest("compiler/testData/diagnostics/tests/Nullability.kt");
