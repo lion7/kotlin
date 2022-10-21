@@ -17,7 +17,6 @@ import org.jetbrains.kotlin.fir.extensions.predicateBasedProvider
 import org.jetbrains.kotlin.fir.resolve.fullyExpandedType
 import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
-import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlinx.serialization.compiler.fir.services.dependencySerializationInfoProvider
@@ -99,11 +98,6 @@ internal val FirClassSymbol<*>.serializerForClass: ConeKotlinType?
         .getAnnotationByClassId(SerializationAnnotations.serializerAnnotationClassId)
         ?.getKClassArgument(AnnotationParameterNames.FOR_CLASS)
 
-internal val FirClassSymbol<*>.serializerFor: FirGetClassCall?
-    get() = resolvedAnnotationsWithArguments
-        .getAnnotationByClassId(SerializationAnnotations.serializerAnnotationClassId)
-        ?.getGetKClassArgument(AnnotationParameterNames.FOR_CLASS)
-
 internal val FirClassLikeDeclaration.serializerFor: FirGetClassCall?
     get() = getAnnotationByClassId(SerializationAnnotations.serializerAnnotationClassId)
         ?.getGetKClassArgument(AnnotationParameterNames.FOR_CLASS)
@@ -181,13 +175,13 @@ internal fun FirClassSymbol<*>.isFinalOrOpen(): Boolean {
 context(FirSession)
 @Suppress("IncorrectFormatting") // KTIJ-22227
 val FirClassSymbol<*>.hasCompanionObjectAsSerializer: Boolean
-    get() = isInternallySerializableObject || hasCustomSerializerOnCompanion
+    get() = isInternallySerializableObject || hasExternalSerializerOnCompanion
 
 context(FirSession)
 @Suppress("IncorrectFormatting") // KTIJ-22227
-val FirClassSymbol<*>.hasCustomSerializerOnCompanion: Boolean
-// TODO It was accepted that the annotation on the companion can take only the current class as an argument. Before the release of FIR, we need to add a new annotation and check gere for its presence
-    get() = (this as? FirRegularClassSymbol)?.companionObjectSymbol?.serializerFor != null
+val FirClassSymbol<*>.hasExternalSerializerOnCompanion: Boolean
+    // It was accepted that the annotation on the companion can take only the current class as an argument.
+    get() = resolvedAnnotationsWithArguments.getAnnotationByClassId(SerializationAnnotations.serializerAnnotationClassId) != null
 
 context(FirSession)
 val FirClassSymbol<*>.isEnumWithLegacyGeneratedSerializer: Boolean

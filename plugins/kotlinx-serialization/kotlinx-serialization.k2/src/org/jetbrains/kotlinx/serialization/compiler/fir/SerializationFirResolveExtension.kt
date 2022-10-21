@@ -85,12 +85,14 @@ class SerializationFirResolveExtension(session: FirSession) : FirDeclarationGene
         val classId = classSymbol.classId
         val result = mutableSetOf<Name>()
 
-        val origin = classSymbol.origin as? FirDeclarationOrigin.Plugin
-
+        val isExternalSerializer = classSymbol.isExternalSerializer
         when {
-            classSymbol.isCompanion && origin?.key == SerializationPluginKey -> {
-                result += SpecialNames.INIT
+            classSymbol.isCompanion && !isExternalSerializer -> {
                 result += SerialEntityNames.SERIALIZER_PROVIDER_NAME
+                val origin = classSymbol.origin as? FirDeclarationOrigin.Plugin
+                if (origin?.key == SerializationPluginKey) {
+                    result += SpecialNames.INIT
+                }
             }
 
             classId.shortClassName == SerialEntityNames.SERIALIZER_CLASS_NAME -> {
@@ -110,7 +112,7 @@ class SerializationFirResolveExtension(session: FirSession) : FirDeclarationGene
                 }
             }
 
-            classSymbol.isExternalSerializer -> {
+            isExternalSerializer -> {
                 if (classSymbol.declarationSymbols.filterIsInstance<FirPropertySymbol>()
                         .none { it.name == SerialEntityNames.SERIAL_DESC_FIELD_NAME }
                 ) {
