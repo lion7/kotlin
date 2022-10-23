@@ -6,9 +6,11 @@
 package org.jetbrains.kotlin.test.backend.ir
 
 import org.jetbrains.kotlin.backend.common.IrActualizer
+import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.test.model.*
 import org.jetbrains.kotlin.test.services.TestServices
 import org.jetbrains.kotlin.test.services.dependencyProvider
+import org.jetbrains.kotlin.utils.addIfNotNull
 
 class KLibToJvmBackendFacade(
     val testServices: TestServices,
@@ -29,11 +31,23 @@ class KLibToJvmBackendFacade(
         }
 
         val dependencyProvider = testServices.dependencyProvider
-        val dependencyFragments = module.dependsOnDependencies.mapNotNull { dependency ->
-            val testModule = dependencyProvider.getTestModule(dependency.moduleName)
-            val artifact = dependencyProvider.getArtifact(testModule, ArtifactKinds.KLib)
-            (artifact as? JvmKLibArtifact)?.backendInput?.irModuleFragment
+        val visitedModules = mutableSetOf<TestModule>()
+        val dependencyFragments = mutableListOf<IrModuleFragment>()
+
+        fun loadDependencyFragments(module: TestModule, level: Int) {
+            if (!visitedModules.add(module)) return
+
+            if (level > 0) {
+                val artifact = dependencyProvider.getArtifact(module, ArtifactKinds.KLib)
+                dependencyFragments.addIfNotNull((artifact as? JvmKLibArtifact)?.backendInput?.irModuleFragment)
+            }
+
+            for (dependency in module.dependsOnDependencies) {
+                loadDependencyFragments(dependencyProvider.getTestModule(dependency.moduleName), level + 1)
+            }
         }
+
+        loadDependencyFragments(module, 0)
         IrActualizer.actualize(inputArtifact.backendInput.irModuleFragment, dependencyFragments)
 
         return jvmFacadeHelper.transform(

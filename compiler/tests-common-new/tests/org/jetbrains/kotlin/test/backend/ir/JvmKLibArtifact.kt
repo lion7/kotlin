@@ -8,11 +8,13 @@ package org.jetbrains.kotlin.test.backend.ir
 import org.jetbrains.kotlin.KtSourceFile
 import org.jetbrains.kotlin.backend.jvm.JvmIrCodegenFactory
 import org.jetbrains.kotlin.codegen.state.GenerationState
+import org.jetbrains.kotlin.fir.backend.Fir2IrComponents
 import org.jetbrains.kotlin.test.model.BinaryArtifacts
 
 data class JvmKLibArtifact(
     val state: GenerationState,
     val codegenFactory: JvmIrCodegenFactory,
     val backendInput: JvmIrCodegenFactory.JvmIrBackendInput,
-    val sourceFiles: List<KtSourceFile>
+    val sourceFiles: List<KtSourceFile>,
+    val components: Fir2IrComponents?
 ) : BinaryArtifacts.KLib(null)

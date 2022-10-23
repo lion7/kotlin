@@ -21,7 +21,8 @@ class KLibForJvmBackendFacade(
                 inputArtifact.state,
                 inputArtifact.codegenFactory,
                 inputArtifact.backendInput,
-                inputArtifact.sourceFiles
+                inputArtifact.sourceFiles,
+                inputArtifact.components
             )
             else -> error("KLibForJvmBackendFacade expects IrBackendInput.JvmIrBackendInput as input")
         }
