@@ -1,0 +1,260 @@
+/.idea/ "Kotlin Build Infrastructure"
+/.space/ "Kotlin Build Infrastructure"
+
+/analysis/ "Kotlin IDE"
+# UNKNOWN: /android-studio/
+# UNKNOWN: /annotations/
+
+
+/ant/ "Kotlin Build Tools"
+# UNKNOWN: /benchmarks/
+/build-common/ "Kotlin Build Tools"
+/buildSrc/ "Kotlin Build Infrastructure"
+
+# UNKNOWN: /compiler/android-tests/
+
+/compiler/backend/ "Kotlin JVM"
+/compiler/backend.common.jvm/ "Kotlin JVM"
+
+# UNKNOWN: /compiler/backend-common/
+# UNKNOWN: /compiler/builtins-serializer/
+
+/compiler/cli/ "Kotlin Compiler Core"
+/compiler/compiler.version/ "Kotlin Compiler Core"
+/compiler/compiler-runner/ "Kotlin Compiler Core"
+/compiler/compiler-runner-unshaded/ "Kotlin Build Tools"
+/compiler/config/ "Kotlin Compiler Core"
+/compiler/config.jvm/ "Kotlin JVM"
+/compiler/container/ "Kotlin Compiler Core"
+/compiler/daemon/ "Kotlin Compiler Core"
+/compiler/fir/ "Kotlin Compiler Core"
+/compiler/frontend/ "Kotlin Compiler Core"
+/compiler/frontend.common/ "Kotlin Compiler Core"
+/compiler/frontend.common.jvm/ "Kotlin Compiler Core"
+/compiler/frontend.common-psi/ "Kotlin Compiler Core"
+/compiler/frontend.java/ "Kotlin Compiler Core"
+/compiler/incremental-compilation-impl/ "Kotlin Build Tools"
+
+# UNKNOWN: /compiler/ir/backend.common/
+
+/compiler/ir/backend.js/ "Kotlin JS"
+/compiler/ir/backend.jvm/ "Kotlin JVM"
+/compiler/ir/backend.wasm/ "Kotlin Wasm"
+
+# UNKNOWN: /compiler/ir/ir.interpreter/
+
+/compiler/ir/ir.ir2cfg/ Mikhail.Glukhikh
+/compiler/ir/ir.psi2ir/ "Kotlin Compiler Core"
+
+# UNKNOWN: /compiler/ir/ir.tree/
+# UNKNOWN: /compiler/ir/ir.tree.impl/
+
+/compiler/ir/serialization.common/ "Kotlin Compiler Core"
+/compiler/ir/serialization.js/ "Kotlin JS"
+/compiler/ir/serialization.jvm/ "Kotlin JVM"
+/compiler/javac-wrapper/ "Kotlin Compiler Core"
+/compiler/light-classes/ "Kotlin Compiler Core"
+/compiler/plugin-api/ "Kotlin Compiler Core"
+/compiler/preloader/ "Kotlin Compiler Core"
+/compiler/psi/ "Kotlin Compiler Core"
+/compiler/resolution/ "Kotlin Compiler Core"
+/compiler/resolution.common/ "Kotlin Compiler Core"
+# UNKNOWN: /compiler/resolution.common.jvm/
+/compiler/serialization/ "Kotlin Compiler Core"
+
+# UNKNOWN: /compiler/test-infrastructure/
+# UNKNOWN: /compiler/test-infrastructure-utils/
+# UNKNOWN: /compiler/testData/
+# UNKNOWN: /compiler/tests/
+# UNKNOWN: /compiler/tests-against-klib/
+# UNKNOWN: /compiler/tests-common/
+# UNKNOWN: /compiler/tests-common-new/
+# UNKNOWN: /compiler/tests-compiler-utils/
+# UNKNOWN: /compiler/tests-different-jdk/
+# UNKNOWN: /compiler/tests-for-compiler-generator/
+# UNKNOWN: /compiler/tests-gen/
+# UNKNOWN: /compiler/tests-java8/
+# UNKNOWN: /compiler/tests-mutes/
+# UNKNOWN: /compiler/tests-spec/
+
+/compiler/util/ "Kotlin Compiler Core"
+# UNKNOWN: /compiler/util-io/
+/compiler/util-klib/ "Kotlin Native"
+/compiler/util-klib-metadata/ "Kotlin Native"
+/compiler/visualizer/ "Kotlin Compiler Core"
+
+/core/builtins/ "Kotlin Compiler Core"
+/core/compiler.common/ "Kotlin Compiler Core"
+/core/compiler.common.jvm/ "Kotlin Compiler Core"
+/core/descriptors/ "Kotlin Compiler Core"
+/core/descriptors.jvm/ "Kotlin Compiler Core"
+/core/descriptors.runtime/ "Kotlin Libraries"
+/core/deserialization/ "Kotlin Compiler Core"
+/core/deserialization.common/ "Kotlin Compiler Core"
+/core/deserialization.common.jvm/ "Kotlin Compiler Core"
+/core/metadata/ "Kotlin Compiler Core"
+/core/metadata.jvm/ "Kotlin JVM"
+/core/reflection.jvm/ "Kotlin Libraries"
+/core/script.runtime/ "Kotlin Compiler Core"
+/core/util.runtime/ "Kotlin Compiler Core"
+
+/dependencies/ "Kotlin Build Infrastructure"
+
+# UNKNOWN: /docs/
+/generators/analysis-api-generator/ "Kotlin IDE"
+/generators/builtins/ "Kotlin Libraries"
+/generators/evaluate/ "Kotlin Compiler Core"
+
+/generators/ide-iml-to-gradle-generator/ "Kotlin Build Infrastructure"
+
+# UNKNOWN: /generators/interpreter/
+/generators/main/ "Kotlin Build Infrastructure"
+/generators/nativeInteropRuntime/ "Kotlin Native"
+
+# UNKNOWN: /generators/protobuf/
+# UNKNOWN: /generators/protobufCompare/
+# UNKNOWN: /generators/test-generator/
+# UNKNOWN: /generators/tests/
+/generators/wasm/ "Kotlin Wasm"
+
+/gradle/ "Kotlin Build Infrastructure"
+
+# UNKNOWN: /idea/
+
+/jps/ "Kotlin Build Tools"
+
+/js/ "Kotlin JS"
+/kotlin-js-store/ "Kotlin JS"
+/kotlin-native/ "Kotlin Native"
+
+# Libraries
+/libraries/examples/annotation-processor-example/ "Kotlin Compiler Core"
+/libraries/examples/browser-example/ "Kotlin JS"
+/libraries/examples/browser-example-with-library/ "Kotlin JS"
+/libraries/examples/js-example/ "Kotlin JS"
+/libraries/examples/kotlin-gradle-subplugin-example/ "Kotlin Compiler Core"
+
+# UNKNOWN: /libraries/examples/kotlin-java-example/
+
+/libraries/examples/kotlin-js-library-example/ "Kotlin JS"
+/libraries/examples/kotlin-jsr223-daemon-local-eval-example/ "Kotlin Compiler Core"
+/libraries/examples/kotlin-jsr223-local-example/ "Kotlin Compiler Core"
+/libraries/examples/scripting/ "Kotlin Compiler Core"
+/libraries/kotlin.test/ "Kotlin Compiler Core"
+
+# UNKNOWN: /libraries/kotlinx-metadata/
+# UNKNOWN: /libraries/lib/
+
+/libraries/reflect/ "Kotlin Libraries"
+/libraries/scripting/ "Kotlin Compiler Core"
+/libraries/stdlib/ "Kotlin Libraries"
+# Libraries. Tools
+/libraries/tools/atomicfu/ "Kotlin Libraries"
+/libraries/tools/binary-compatibility-validator/ "Kotlin Libraries"
+/libraries/tools/dukat/ "Kotlin JS"
+/libraries/tools/gradle/ "Kotlin Build Tools"
+/libraries/tools/kotlin-allopen/ "Kotlin Build Tools"
+/libraries/tools/kotlin-annotation-processing/ "Kotlin Build Tools"
+/libraries/tools/kotlin-annotation-processing-maven/ "Kotlin Build Tools"
+/libraries/tools/kotlin-annotations-jvm/ "Kotlin Libraries"
+/libraries/tools/kotlin-assignment/ "Kotlin Build Tools"
+/libraries/tools/kotlin-bom/ "Kotlin Build Infrastructure"
+/libraries/tools/kotlin-dist-for-jps-meta/ "Kotlin Build Tools"
+/libraries/tools/kotlin-gradle-build-metrics/ "Kotlin Build Tools"
+/libraries/tools/kotlin-gradle-compiler-types/ "Kotlin Build Tools"
+/libraries/tools/kotlin-gradle-plugin/ "Kotlin Build Tools"
+/libraries/tools/kotlin-gradle-plugin-annotations/ "Kotlin Build Tools"
+/libraries/tools/kotlin-gradle-plugin-api/ "Kotlin Build Tools"
+/libraries/tools/kotlin-gradle-plugin-dsl-codegen/ "Kotlin Build Tools"
+/libraries/tools/kotlin-gradle-plugin-idea/ "Kotlin Build Tools"
+/libraries/tools/kotlin-gradle-plugin-idea-for-compatibility-tests/ "Kotlin Build Tools"
+/libraries/tools/kotlin-gradle-plugin-idea-proto/ "Kotlin Build Tools"
+/libraries/tools/kotlin-gradle-plugin-integration-tests/ "Kotlin Build Tools"
+/libraries/tools/kotlin-gradle-plugin-kpm-android/ "Kotlin Build Tools"
+/libraries/tools/kotlin-gradle-plugin-model/ "Kotlin Build Tools"
+/libraries/tools/kotlin-gradle-plugin-npm-versions-codegen/ "Kotlin Build Tools"
+/libraries/tools/kotlin-gradle-plugin-test-utils-embeddable/ "Kotlin Build Tools"
+/libraries/tools/kotlin-gradle-statistics/ "Kotlin Build Tools"
+/libraries/tools/kotlin-lombok/ "Kotlin Build Tools"
+/libraries/tools/kotlin-main-kts/ "Kotlin Compiler Core"
+/libraries/tools/kotlin-main-kts-test/ "Kotlin Compiler Core"
+/libraries/tools/kotlin-maven-allopen/ "Kotlin Build Tools"
+/libraries/tools/kotlin-maven-lombok/ "Kotlin Build Tools"
+/libraries/tools/kotlin-maven-noarg/ "Kotlin Build Tools"
+/libraries/tools/kotlin-maven-plugin/ "Kotlin Build Tools"
+/libraries/tools/kotlin-maven-plugin-test/ "Kotlin Build Tools"
+/libraries/tools/kotlin-maven-sam-with-receiver/ "Kotlin Build Tools"
+/libraries/tools/kotlin-maven-serialization/ "Kotlin Build Tools"
+/libraries/tools/kotlin-osgi-bundle/ "Kotlin Build Tools"
+/libraries/tools/kotlin-noarg/ "Kotlin Build Tools"
+/libraries/tools/kotlin-prepush-hook/ "Kotlin Build Infrastructure"
+/libraries/tools/kotlin-project-model/ "Kotlin Build Tools"
+/libraries/tools/kotlin-project-model-tests-generator/ "Kotlin Build Tools"
+/libraries/tools/kotlin-sam-with-receiver/ "Kotlin Build Tools"
+/libraries/tools/kotlin-script-util/ "Kotlin Compiler Core"
+/libraries/tools/kotlin-serialization/ "Kotlin Build Tools"
+/libraries/tools/kotlin-serialization-unshaded/ "Kotlin Build Tools"
+/libraries/tools/kotlin-stdlib-docs/ "Kotlin Libraries"
+/libraries/tools/kotlin-stdlib-gen/ "Kotlin Libraries"
+/libraries/tools/kotlin-test-js-runner/ "Kotlin Libraries"
+/libraries/tools/kotlin-tooling-core/ "Kotlin Build Tools"
+/libraries/tools/kotlin-tooling-metadata/ "Kotlin Build Tools"
+/libraries/tools/kotlinp/ "Kotlin JVM"
+# UNKNOWN: /libraries/tools/maven-archetypes/
+/libraries/tools/mutability-annotations-compat/ "Kotlin Libraries"
+/libraries/tools/script-runtime/ "Kotlin Compiler Core"
+/libraries/maven-settings.xml "Kotlin Build Infrastructure"
+/libraries/pom.xml "Kotlin Build Infrastructure"
+# UNKNOWN: /libraries/ReadMe.md
+
+/license/ "Kotlin Build Infrastructure"
+/native/ "Kotlin Native"
+
+# Plugins
+/plugins/allopen/ "Kotlin Compiler Core"
+/plugins/android-extensions/ "Kotlin Compiler Core"
+/plugins/assign-plugin/ "Kotlin Compiler Core"
+/plugins/atomicfu/ "Kotlin Libraries"
+/plugins/fir-plugin-prototype/ "Kotlin Compiler Core"
+# UNKNOWN: /plugins/imports-dumper/
+# UNKNOWN: /plugins/jvm-abi-gen/
+/plugins/kapt3/ "Kotlin Compiler Core"
+/plugins/kotlinx-serialization/ "Kotlin Libraries"
+/plugins/lombok/ "Kotlin Compiler Core"
+/plugins/noarg/ "Kotlin Compiler Core"
+/plugins/parcelize/ "Kotlin Compiler Core"
+# UNKNOWN: /plugins/pill/
+/plugins/sam-with-receiver/ "Kotlin Compiler Core"
+/plugins/scripting/ "Kotlin Compiler Core"
+
+/prepare/ "Kotlin Build Infrastructure"
+/repo/ "Kotlin Build Infrastructure"
+# UNKNOWN: /resources/
+# UNKNOWN: /spec-docs/
+# UNKNOWN: /test-instrumenter/
+# UNKNOWN: /tests/
+# UNKNOWN: /third-party/
+
+/wasm/ "Kotlin Wasm"
+
+# Singular files
+/.bunch "Kotlin Build Infrastructure"
+/.gitattributes "Kotlin Build Infrastructure"
+/.space.kts "Kotlin Build Infrastructure"
+
+# UNKNOWN: /ChangeLog.md
+# UNKNOWN: /CODE_OF_CONDUCT.md
+/dev-env-warmup.sh "Kotlin Build Infrastructure"
+# UNKNOWN: /ReadMe.md
+# UNKNOWN: /SECURITY.md
+
+# Build files
+**.gradle.kts "Kotlin Build Infrastructure"
+**.gradle "Kotlin Build Infrastructure"
+.gitignore "Kotlin Build Infrastructure"
+gradlew "Kotlin Build Infrastructure"
+gradlew.bat "Kotlin Build Infrastructure"
+
+/gradle.properties "Kotlin Build Infrastructure"
+
+/.space/CODEOWNERS "Kotlin Build Infrastructure"
