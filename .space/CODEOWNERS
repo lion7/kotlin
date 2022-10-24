@@ -1,3 +1,15 @@
+# This file is checked by org.jetbrains.kotlin.code.SpaceCodeOwnersTest
+# Directive OWNER_LIST specifies possible values for owner field
+# Directive UNKNOWN specifies that path is unclaimed
+# Ownership must be exhaustive modulo UNKNOWN
+
+# OWNER_LIST: "Kotlin Libraries"
+# OWNER_LIST: "Kotlin JVM" "Kotlin JS" "Kotlin Native" "Kotlin Wasm"
+# OWNER_LIST: "Kotlin Compiler Core"
+# OWNER_LIST: "Kotlin Build Infrastructure" "Kotlin Build Tools"
+# OWNER_LIST: "Kotlin IDE"
+# OWNER_LIST: Mikhail.Glukhikh
+
 /.idea/ "Kotlin Build Infrastructure"
 /.space/ "Kotlin Build Infrastructure"
 
