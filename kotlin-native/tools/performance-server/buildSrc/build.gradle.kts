@@ -22,7 +22,6 @@ buildscript {
 
     repositories {
         maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/kotlin-dependencies")
-        jcenter()
         project.bootstrapKotlinRepo?.let {
             maven(url = it)
         }
