@@ -263,9 +263,6 @@ private class JvmMultiFieldValueClassLowering(context: JvmBackendContext) : JvmV
     override val specificMangle: SpecificMangle
         get() = SpecificMangle.MultiField
 
-    override fun keepOldFunctionInsteadOfNew(function: IrFunction): Boolean =
-        function.isMultiFieldValueClassFieldGetter
-
     private val variablesToAdd = mutableMapOf<IrDeclarationParent, MutableSet<IrVariable>>()
 
     private fun variablesSaver(variable: IrVariable) {
@@ -396,7 +393,6 @@ private class JvmMultiFieldValueClassLowering(context: JvmBackendContext) : JvmV
     override fun handleSpecificNewClass(declaration: IrClass) {
         val rootNode = replacements.getRootMfvcNode(declaration)
         rootNode.replaceFields()
-        declaration.declarations.removeIf { it is IrSimpleFunction && it.isMultiFieldValueClassFieldGetter && it.overriddenSymbols.isEmpty() }
         declaration.declarations += rootNode.run {
             allUnboxMethods + listOfNotNull(boxMethod, specializedEqualsMethod.takeIf { createdNewSpecializedEqualsMethod })
         }
