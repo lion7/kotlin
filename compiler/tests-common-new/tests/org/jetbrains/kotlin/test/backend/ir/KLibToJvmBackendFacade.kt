@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.test.backend.ir
 
+import org.jetbrains.kotlin.backend.common.IrActualizer
 import org.jetbrains.kotlin.test.model.*
 import org.jetbrains.kotlin.test.services.TestServices
 import org.jetbrains.kotlin.test.services.dependencyProvider
@@ -26,6 +27,14 @@ class KLibToJvmBackendFacade(
         require(inputArtifact is JvmKLibArtifact) {
             "KLibToJvmBackendFacade expects BinaryArtifacts.KLib as input"
         }
+
+        val dependencyProvider = testServices.dependencyProvider
+        val dependencyFragments = module.dependsOnDependencies.mapNotNull { dependency ->
+            val testModule = dependencyProvider.getTestModule(dependency.moduleName)
+            val artifact = dependencyProvider.getArtifact(testModule, ArtifactKinds.KLib)
+            (artifact as? JvmKLibArtifact)?.backendInput?.irModuleFragment
+        }
+        IrActualizer.actualize(inputArtifact.backendInput.irModuleFragment, dependencyFragments)
 
         return jvmFacadeHelper.transform(
             inputArtifact.state,
