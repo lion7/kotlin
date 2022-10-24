@@ -10,7 +10,6 @@ import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.FirSessionComponent
 import org.jetbrains.kotlin.fir.declarations.FirClass
 import org.jetbrains.kotlin.fir.declarations.FirRegularClass
-import org.jetbrains.kotlin.fir.declarations.utils.classId
 import org.jetbrains.kotlin.fir.declarations.utils.delegateFields
 import org.jetbrains.kotlin.fir.declarations.utils.isExpect
 import org.jetbrains.kotlin.fir.resolve.*
@@ -167,7 +166,8 @@ private fun FirClass.scopeForClassImpl(
             key, substitutor,
             substitutor.substituteOrSelf(classFirDispatchReceiver.defaultType()) as ConeClassLikeType,
             skipPrivateMembers,
-            makeExpect = isFromExpectClass
+            makeExpect = isFromExpectClass,
+            derivedClass = classFirDispatchReceiver.symbol.toLookupTag()
         )
     }
 }

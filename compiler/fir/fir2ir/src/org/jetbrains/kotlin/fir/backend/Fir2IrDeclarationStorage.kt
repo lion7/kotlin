@@ -429,15 +429,11 @@ class Fir2IrDeclarationStorage(
         }
     }
 
-    fun getCachedIrFunction(
-        function: FirSimpleFunction,
-        dispatchReceiverLookupTag: ConeClassLikeLookupTag?,
-        signatureCalculator: () -> IdSignature?
-    ): IrSimpleFunction? {
+    fun getCachedIrFunction(function: FirSimpleFunction, signatureCalculator: () -> IdSignature?): IrSimpleFunction? {
         if (function.visibility == Visibilities.Local) {
             return localStorage.getLocalFunction(function)
         }
-        return getCachedIrCallable(function, dispatchReceiverLookupTag, functionCache, signatureCalculator) { signature ->
+        return getCachedIrCallable(function, functionCache, signatureCalculator) { signature ->
             symbolTable.referenceSimpleFunctionIfAny(signature)?.owner
         }
     }
@@ -956,24 +952,24 @@ class Fir2IrDeclarationStorage(
 
     fun getCachedIrProperty(property: FirProperty): IrProperty? = propertyCache[property]
 
-    fun getCachedIrProperty(
-        property: FirProperty,
-        dispatchReceiverLookupTag: ConeClassLikeLookupTag?,
-        signatureCalculator: () -> IdSignature?
-    ): IrProperty? {
-        return getCachedIrCallable(property, dispatchReceiverLookupTag, propertyCache, signatureCalculator) { signature ->
+    fun getCachedIrProperty(property: FirProperty, signatureCalculator: () -> IdSignature?): IrProperty? {
+        return getCachedIrCallable(property, propertyCache, signatureCalculator) { signature ->
             symbolTable.referencePropertyIfAny(signature)?.owner
         }
     }
 
     private inline fun <reified FC : FirCallableDeclaration, reified IC : IrDeclaration> getCachedIrCallable(
         declaration: FC,
-        dispatchReceiverLookupTag: ConeClassLikeLookupTag?,
         cache: MutableMap<FC, IC>,
         signatureCalculator: () -> IdSignature?,
         referenceIfAny: (IdSignature) -> IC?
     ): IC? {
-        val isFakeOverride = dispatchReceiverLookupTag != null && dispatchReceiverLookupTag != declaration.containingClassLookupTag()
+        val isFakeOverride = when (declaration.origin) {
+            is FirDeclarationOrigin.SubstitutionOverride -> true
+            is FirDeclarationOrigin.IntersectionOverride -> true
+            else -> false
+        }
+
         if (!isFakeOverride) {
             cache[declaration]?.let { return it }
         }
@@ -1239,7 +1235,7 @@ class Fir2IrDeclarationStorage(
         return getIrCallableSymbol(
             firConstructorSymbol,
             dispatchReceiverLookupTag = null,
-            getCachedIrDeclaration = { constructor: FirConstructor, _, calculator -> getCachedIrConstructor(constructor, calculator) },
+            getCachedIrDeclaration = { constructor: FirConstructor, calculator -> getCachedIrConstructor(constructor, calculator) },
             createIrDeclaration = { parent, origin ->
                 createIrConstructor(fir, parent as IrClass, predefinedOrigin = origin, forceTopLevelPrivate = forceTopLevelPrivate)
             },
@@ -1446,7 +1442,7 @@ class Fir2IrDeclarationStorage(
             > getIrCallableSymbol(
         firSymbol: FS,
         dispatchReceiverLookupTag: ConeClassLikeLookupTag?,
-        getCachedIrDeclaration: (firDeclaration: F, dispatchReceiverLookupTag: ConeClassLikeLookupTag?, () -> IdSignature?) -> I?,
+        getCachedIrDeclaration: (firDeclaration: F, () -> IdSignature?) -> I?,
         createIrDeclaration: (parent: IrDeclarationParent?, origin: IrDeclarationOrigin) -> I,
         createIrLazyDeclaration: (signature: IdSignature, lazyOwner: IrDeclarationParent, origin: IrDeclarationOrigin) -> I,
         forceTopLevelPrivate: Boolean = false,
@@ -1455,7 +1451,7 @@ class Fir2IrDeclarationStorage(
         val irParent by lazy { findIrParent(fir) }
         val signature by lazy { signatureComposer.composeSignature(fir, dispatchReceiverLookupTag, forceTopLevelPrivate) }
         synchronized(symbolTable.lock) {
-            getCachedIrDeclaration(fir, dispatchReceiverLookupTag.takeIf { it !is ConeClassLookupTagWithFixedSymbol }) {
+            getCachedIrDeclaration(fir) {
                 // Parent calculation provokes declaration calculation for some members from IrBuiltIns
                 @Suppress("UNUSED_EXPRESSION") irParent
                 signature

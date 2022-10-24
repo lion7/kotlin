@@ -119,7 +119,8 @@ class FakeOverrideGenerator(
                     FirFakeOverrideGenerator.createSubstitutionOverrideFunction(
                         session, symbol, firFunction,
                         newDispatchReceiverType = firClass.defaultType(),
-                        isExpect = (firClass as? FirRegularClass)?.isExpect == true
+                        isExpect = (firClass as? FirRegularClass)?.isExpect == true,
+                        derivedClass = firClass.symbol.toLookupTag()
                     )
                 },
                 baseFunctionSymbols,
@@ -143,7 +144,8 @@ class FakeOverrideGenerator(
                     FirFakeOverrideGenerator.createSubstitutionOverrideProperty(
                         session, symbolForOverride, firProperty,
                         newDispatchReceiverType = firClass.defaultType(),
-                        isExpect = (firClass as? FirRegularClass)?.isExpect == true
+                        isExpect = (firClass as? FirRegularClass)?.isExpect == true,
+                        derivedClass = firClass.symbol.toLookupTag()
                     )
                 },
                 basePropertySymbols,
@@ -183,7 +185,7 @@ class FakeOverrideGenerator(
         irClass: IrClass,
         isLocal: Boolean,
         originalSymbol: FirCallableSymbol<*>,
-        cachedIrDeclaration: (firDeclaration: D, dispatchReceiverLookupTag: ConeClassLikeLookupTag?, () -> IdSignature?) -> I?,
+        cachedIrDeclaration: (firDeclaration: D, () -> IdSignature?) -> I?,
         createIrDeclaration: (firDeclaration: D, irParent: IrClass, thisReceiverOwner: IrClass?, origin: IrDeclarationOrigin, isLocal: Boolean) -> I,
         createFakeOverrideSymbol: (firDeclaration: D, baseSymbol: S) -> S,
         baseSymbols: MutableMap<I, List<S>>,
@@ -225,7 +227,7 @@ class FakeOverrideGenerator(
                 return
             }
         }
-        val irDeclaration = cachedIrDeclaration(fakeOverrideFirDeclaration, null) {
+        val irDeclaration = cachedIrDeclaration(fakeOverrideFirDeclaration) {
             // Sometimes we can have clashing here when FIR substitution/intersection override
             // have the same signature.
             // Now we avoid this problem by signature caching,
@@ -311,7 +313,8 @@ class FakeOverrideGenerator(
             FirFakeOverrideGenerator.createSubstitutionOverrideProperty(
                 session, callableSymbol, firProperty,
                 newDispatchReceiverType = klass.defaultType(),
-                isExpect = (klass as? FirRegularClass)?.isExpect == true
+                isExpect = (klass as? FirRegularClass)?.isExpect == true,
+                derivedClass = klass.symbol.toLookupTag()
             )
         },
         computeDirectOverridden = FirTypeScope::getDirectOverriddenProperties,
