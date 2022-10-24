@@ -49,7 +49,7 @@ object BinaryArtifacts {
             get() = ArtifactKinds.Native
     }
 
-    class KLib(val outputFile: File) : ResultingArtifact.Binary<KLib>() {
+    open class KLib(val outputFile: File?) : ResultingArtifact.Binary<KLib>() {
         override val kind: BinaryKind<KLib>
             get() = ArtifactKinds.KLib
     }

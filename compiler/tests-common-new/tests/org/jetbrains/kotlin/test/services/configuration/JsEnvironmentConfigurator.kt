@@ -173,7 +173,7 @@ class JsEnvironmentConfigurator(testServices: TestServices) : EnvironmentConfigu
                 }
             }
             getRecursive(module, kind)
-            return visited.map { testServices.dependencyProvider.getArtifact(it, ArtifactKinds.KLib).outputFile }
+            return visited.mapNotNull { testServices.dependencyProvider.getArtifact(it, ArtifactKinds.KLib).outputFile }
         }
 
         fun getDependencies(module: TestModule, testServices: TestServices, kind: DependencyRelation): List<ModuleDescriptorImpl> {
