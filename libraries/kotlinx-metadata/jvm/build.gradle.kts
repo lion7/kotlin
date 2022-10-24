@@ -54,7 +54,7 @@ if (deployVersion != null) {
     publish()
 }
 
-runtimeJar(tasks.register<ShadowJar>("shadowJar")) {
+val shadowJarTask = runtimeJar(tasks.register<ShadowJar>("shadowJar")) {
     callGroovy("manifestAttributes", manifest, project)
     manifest.attributes["Implementation-Version"] = archiveVersion
 
@@ -67,7 +67,13 @@ runtimeJar(tasks.register<ShadowJar>("shadowJar")) {
 val test by tasks
 test.dependsOn("shadowJar")
 
-tasks["check"].dependsOn(":kotlinx-metadata:check")
+tasks.apiBuild {
+    inputJar.value(shadowJarTask.flatMap { it.archiveFile })
+}
+
+apiValidation {
+    ignoredPackages.add("kotlinx.metadata.internal")
+}
 
 sourcesJar {
     for (dependency in shadows.dependencies) {
