@@ -16,7 +16,6 @@ import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.*
 import org.jetbrains.kotlin.ir.overrides.FakeOverrideBuilderStrategy
 import org.jetbrains.kotlin.ir.overrides.IrOverridingUtil
-import org.jetbrains.kotlin.ir.overrides.IrUnimplementedOverridesStrategy
 import org.jetbrains.kotlin.ir.overrides.IrUnimplementedOverridesStrategy.ProcessAsFakeOverrides
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.symbols.impl.IrPropertySymbolImpl
@@ -1308,10 +1307,21 @@ fun IrBuiltIns.getKFunctionType(returnType: IrType, parameterTypes: List<IrType>
 fun IdSignature?.isComposite(): Boolean =
     this is IdSignature.CompositeSignature
 
-val IrFunction.isTypedEquals: Boolean
-    get() {
-        val parentClass = parent as? IrClass ?: return false
-        return name == OperatorNameConventions.EQUALS && returnType.isBoolean() && valueParameters.size == 1
-                && (valueParameters[0].type.classFqName?.run { parentClass.hasEqualFqName(this) } ?: false)
-                && contextReceiverParametersCount == 0 && extensionReceiverParameter == null && parentClass.isValue
-    }
+
+
+private fun IrFunction.isValueClassTypedEquals(inline: Boolean, mfvc: Boolean): Boolean {
+    val parentClass = parent as? IrClass ?: return false
+    return name == OperatorNameConventions.EQUALS && returnType.isBoolean() && valueParameters.size == 1
+            && (valueParameters[0].type.classFqName?.run { parentClass.hasEqualFqName(this) } ?: false)
+            && contextReceiverParametersCount == 0 && extensionReceiverParameter == null
+            && (inline && parentClass.isSingleFieldValueClass || mfvc && parentClass.isMultiFieldValueClass)
+}
+
+val IrFunction.isValueClassTypedEquals: Boolean
+    get() = isValueClassTypedEquals(inline = true, mfvc = true)
+
+val IrFunction.isInlineClassTypedEquals: Boolean
+    get() = isValueClassTypedEquals(inline = true, mfvc = false)
+
+val IrFunction.isMultiFieldValueClassTypedEquals: Boolean
+    get() = isValueClassTypedEquals(inline = false, mfvc = true)
