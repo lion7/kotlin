@@ -1,3 +1,4 @@
+# Check-out https://www.jetbrains.com/help/space/code-owners.html#codeowners-file-syntax
 # This file is checked by org.jetbrains.kotlin.code.SpaceCodeOwnersTest
 # Directive OWNER_LIST specifies possible values for owner field
 # Directive UNKNOWN specifies that path is unclaimed
@@ -11,26 +12,29 @@
 # OWNER_LIST: Mikhail.Glukhikh
 
 /.idea/ "Kotlin Build Infrastructure"
+
 /.space/ "Kotlin Build Infrastructure"
 
 /analysis/ "Kotlin IDE"
+
 # UNKNOWN: /android-studio/
+
 # UNKNOWN: /annotations/
 
-
 /ant/ "Kotlin Build Tools"
+
 # UNKNOWN: /benchmarks/
+
 /build-common/ "Kotlin Build Tools"
+
 /buildSrc/ "Kotlin Build Infrastructure"
 
+# Compiler
 # UNKNOWN: /compiler/android-tests/
-
 /compiler/backend/ "Kotlin JVM"
 /compiler/backend.common.jvm/ "Kotlin JVM"
-
 # UNKNOWN: /compiler/backend-common/
 # UNKNOWN: /compiler/builtins-serializer/
-
 /compiler/cli/ "Kotlin Compiler Core"
 /compiler/compiler.version/ "Kotlin Compiler Core"
 /compiler/compiler-runner/ "Kotlin Compiler Core"
@@ -46,21 +50,15 @@
 /compiler/frontend.common-psi/ "Kotlin Compiler Core"
 /compiler/frontend.java/ "Kotlin Compiler Core"
 /compiler/incremental-compilation-impl/ "Kotlin Build Tools"
-
 # UNKNOWN: /compiler/ir/backend.common/
-
 /compiler/ir/backend.js/ "Kotlin JS"
 /compiler/ir/backend.jvm/ "Kotlin JVM"
 /compiler/ir/backend.wasm/ "Kotlin Wasm"
-
 # UNKNOWN: /compiler/ir/ir.interpreter/
-
 /compiler/ir/ir.ir2cfg/ Mikhail.Glukhikh
 /compiler/ir/ir.psi2ir/ "Kotlin Compiler Core"
-
 # UNKNOWN: /compiler/ir/ir.tree/
 # UNKNOWN: /compiler/ir/ir.tree.impl/
-
 /compiler/ir/serialization.common/ "Kotlin Compiler Core"
 /compiler/ir/serialization.js/ "Kotlin JS"
 /compiler/ir/serialization.jvm/ "Kotlin JVM"
@@ -73,7 +71,6 @@
 /compiler/resolution.common/ "Kotlin Compiler Core"
 # UNKNOWN: /compiler/resolution.common.jvm/
 /compiler/serialization/ "Kotlin Compiler Core"
-
 # UNKNOWN: /compiler/test-infrastructure/
 # UNKNOWN: /compiler/test-infrastructure-utils/
 # UNKNOWN: /compiler/testData/
@@ -88,13 +85,13 @@
 # UNKNOWN: /compiler/tests-java8/
 # UNKNOWN: /compiler/tests-mutes/
 # UNKNOWN: /compiler/tests-spec/
-
 /compiler/util/ "Kotlin Compiler Core"
 # UNKNOWN: /compiler/util-io/
 /compiler/util-klib/ "Kotlin Native"
 /compiler/util-klib-metadata/ "Kotlin Native"
 /compiler/visualizer/ "Kotlin Compiler Core"
 
+# Core
 /core/builtins/ "Kotlin Compiler Core"
 /core/compiler.common/ "Kotlin Compiler Core"
 /core/compiler.common.jvm/ "Kotlin Compiler Core"
@@ -113,16 +110,15 @@
 /dependencies/ "Kotlin Build Infrastructure"
 
 # UNKNOWN: /docs/
+
+# Generators
 /generators/analysis-api-generator/ "Kotlin IDE"
 /generators/builtins/ "Kotlin Libraries"
 /generators/evaluate/ "Kotlin Compiler Core"
-
 /generators/ide-iml-to-gradle-generator/ "Kotlin Build Infrastructure"
-
 # UNKNOWN: /generators/interpreter/
 /generators/main/ "Kotlin Build Infrastructure"
 /generators/nativeInteropRuntime/ "Kotlin Native"
-
 # UNKNOWN: /generators/protobuf/
 # UNKNOWN: /generators/protobufCompare/
 # UNKNOWN: /generators/test-generator/
@@ -136,7 +132,9 @@
 /jps/ "Kotlin Build Tools"
 
 /js/ "Kotlin JS"
+
 /kotlin-js-store/ "Kotlin JS"
+
 /kotlin-native/ "Kotlin Native"
 
 # Libraries
@@ -145,21 +143,18 @@
 /libraries/examples/browser-example-with-library/ "Kotlin JS"
 /libraries/examples/js-example/ "Kotlin JS"
 /libraries/examples/kotlin-gradle-subplugin-example/ "Kotlin Compiler Core"
-
 # UNKNOWN: /libraries/examples/kotlin-java-example/
-
 /libraries/examples/kotlin-js-library-example/ "Kotlin JS"
 /libraries/examples/kotlin-jsr223-daemon-local-eval-example/ "Kotlin Compiler Core"
 /libraries/examples/kotlin-jsr223-local-example/ "Kotlin Compiler Core"
 /libraries/examples/scripting/ "Kotlin Compiler Core"
 /libraries/kotlin.test/ "Kotlin Compiler Core"
-
 # UNKNOWN: /libraries/kotlinx-metadata/
 # UNKNOWN: /libraries/lib/
-
 /libraries/reflect/ "Kotlin Libraries"
 /libraries/scripting/ "Kotlin Compiler Core"
 /libraries/stdlib/ "Kotlin Libraries"
+
 # Libraries. Tools
 /libraries/tools/atomicfu/ "Kotlin Libraries"
 /libraries/tools/binary-compatibility-validator/ "Kotlin Libraries"
@@ -215,11 +210,14 @@
 # UNKNOWN: /libraries/tools/maven-archetypes/
 /libraries/tools/mutability-annotations-compat/ "Kotlin Libraries"
 /libraries/tools/script-runtime/ "Kotlin Compiler Core"
+
+# Libraries. Singular files
 /libraries/maven-settings.xml "Kotlin Build Infrastructure"
 /libraries/pom.xml "Kotlin Build Infrastructure"
-# UNKNOWN: /libraries/ReadMe.md
+/libraries/ReadMe.md "Kotlin Libraries"
 
 /license/ "Kotlin Build Infrastructure"
+
 /native/ "Kotlin Native"
 
 # Plugins
@@ -240,12 +238,18 @@
 /plugins/scripting/ "Kotlin Compiler Core"
 
 /prepare/ "Kotlin Build Infrastructure"
+
 /repo/ "Kotlin Build Infrastructure"
+
 # UNKNOWN: /resources/
+
 # UNKNOWN: /spec-docs/
+
 # UNKNOWN: /test-instrumenter/
+
 # UNKNOWN: /tests/
-# UNKNOWN: /third-party/
+
+/third-party/ "Kotlin JVM"
 
 /wasm/ "Kotlin Wasm"
 
@@ -253,12 +257,11 @@
 /.bunch "Kotlin Build Infrastructure"
 /.gitattributes "Kotlin Build Infrastructure"
 /.space.kts "Kotlin Build Infrastructure"
-
-# UNKNOWN: /ChangeLog.md
-# UNKNOWN: /CODE_OF_CONDUCT.md
+/ChangeLog.md "Kotlin Release"
+/CODE_OF_CONDUCT.md "Kotlin Build Infrastructure"
 /dev-env-warmup.sh "Kotlin Build Infrastructure"
-# UNKNOWN: /ReadMe.md
-# UNKNOWN: /SECURITY.md
+/ReadMe.md "Kotlin Build Infrastructure"
+/SECURITY.md "Kotlin Build Infrastructure"
 
 # Build files
 **.gradle.kts "Kotlin Build Infrastructure"
