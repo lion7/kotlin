@@ -20,8 +20,6 @@ fun box() {
     return
 }
 
-// EXPECTATIONS
-
 // EXPECTATIONS JVM
 // test.kt:9 box:
 // test.kt:4 <init>: x:java.lang.String="O":java.lang.String, y:int=123:int
@@ -46,3 +44,5 @@ fun box() {
 // test.kt:6 foo: a:A=A, block:kotlin.jvm.functions.Function1=TestKt$box$1
 // test.kt:9 box:
 // test.kt:20 box:
+
+// EXPECTATIONS JS_IR

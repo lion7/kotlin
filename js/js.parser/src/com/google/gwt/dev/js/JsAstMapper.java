@@ -589,7 +589,7 @@ public class JsAstMapper {
         while (fromParamNode != null) {
             String fromParamName = fromParamNode.getString();
             JsName name = scopeContext.localNameFor(fromParamName);
-            toFn.getParameters().add(new JsParameter(name));
+            toFn.getParameters().add(withLocation(new JsParameter(name), fromParamNode));
             fromParamNode = fromParamNode.getNext();
         }
 

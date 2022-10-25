@@ -258,6 +258,30 @@ class Runtime(private val requestEvaluator: CDPRequestEvaluator) {
         }
 
     /**
+     * Object properties.
+     */
+    @Serializable
+    class GetPropertiesResult(val result: List<PropertyDescriptor>, val exceptionDetails: ExceptionDetails? = null) :
+        CDPMethodInvocationResult()
+
+    @Serializable
+    class GetPropertiesRequestParams(val objectId: RemoteObjectId, val ownProperties: Boolean? = null) : CDPRequestParams()
+
+    /**
+     * Returns properties of a given object. Object group of the result is inherited from the target object.
+     * @param objectId Identifier of the object to return properties for.
+     * @param ownProperties If true, returns properties belonging only to the element itself, not to its prototype chain.
+     */
+    suspend fun getProperties(objectId: RemoteObjectId, ownProperties: Boolean? = null) =
+        requestEvaluator.evaluateRequest<GetPropertiesResult> { messageId ->
+            encodeCDPMethodCall<GetPropertiesResult, GetPropertiesRequestParams>(
+                messageId,
+                "Runtime.getProperties",
+                GetPropertiesRequestParams(objectId, ownProperties)
+            )
+        }
+
+    /**
      * Unique script identifier.
      *
      * See [Runtime.ScriptId](https://chromedevtools.github.io/devtools-protocol/tot/Runtime/#type-ScriptId)
@@ -309,6 +333,9 @@ class Runtime(private val requestEvaluator: CDPRequestEvaluator) {
 
         @SerialName("symbol")
         SYMBOL,
+
+        @SerialName("accessor")
+        ACCESSOR,
 
         @SerialName("bigint")
         BIGINT,
@@ -397,13 +424,131 @@ class Runtime(private val requestEvaluator: CDPRequestEvaluator) {
          */
         val className: String? = null,
         /**
+         * Remote object value in case of primitive values or JSON values (if it was requested).
+         */
+        val value: JsonElement? = null,
+        /**
          * String representation of the object.
          */
         val description: String? = null,
         /**
          * Unique object identifier (for non-primitive values).
          */
-        val objectId: RemoteObjectId? = null
+        val objectId: RemoteObjectId? = null,
+
+        /**
+         * Preview containing abbreviated property values. Specified for [ValueType.OBJECT] type values only.
+         */
+        val preview: ObjectPreview? = null,
+    )
+
+    @Serializable
+    class PropertyDescriptor private constructor(
+        /**
+         * Property name or symbol description.
+         */
+        val name: String,
+
+        /**
+         * The value associated with the property.
+         */
+        val value: RemoteObject? = null,
+
+        /**
+         * True if the value associated with the property may be changed (data descriptors only).
+         */
+        val writable: Boolean? = null,
+
+        /**
+         * A function which serves as a getter for the property, or undefined if there is no getter (accessor descriptors only).
+         */
+        val get: RemoteObject? = null,
+
+        /**
+         * A function which serves as a setter for the property, or undefined if there is no setter (accessor descriptors only).
+         */
+        val set: RemoteObject? = null,
+
+        /**
+         * True if the type of this property descriptor may be changed and if the property may be deleted from the corresponding object.
+         */
+        val configurable: Boolean,
+
+        /**
+         * True if this property shows up during enumeration of the properties on the corresponding object.
+         */
+        val enumerable: Boolean,
+
+        /**
+         * True if the result was thrown during the evaluation.
+         */
+        val wasThrown: Boolean? = null,
+
+        /**
+         * True if the property is owned for the object.
+         */
+        val isOwn: Boolean? = null,
+
+        /**
+         * Property symbol object, if the property is of the [ValueType.SYMBOL] type.
+         */
+        val symbol: RemoteObject? = null,
+    )
+
+    @Serializable
+    class PropertyPreview private constructor(
+        /**
+         * Property name.
+         */
+        val name: String,
+
+        /**
+         * Object type. [ValueType.ACCESSOR] means that the property itself is an accessor property.
+         */
+        val type: ValueType,
+
+        /**
+         * Object subtype hint. Specified for [ValueType.OBJECT] type values only.
+         */
+        val subtype: ObjectSubtype? = null,
+
+        /**
+         * User-friendly property value string.
+         */
+        val value: String? = null,
+
+        /**
+         * Nested value preview.
+         */
+        val valuePreview: ObjectPreview? = null,
+    )
+
+    @Serializable
+    class ObjectPreview private constructor(
+        /**
+         * Object type.
+         */
+        val type: ValueType,
+
+        /**
+         * Object subtype hint. Specified for [ValueType.OBJECT] type values only.
+         */
+        val subtype: ObjectSubtype? = null,
+
+        /**
+         * String representation of the object.
+         */
+        val description: String? = null,
+
+        /**
+         * True iff some of the properties or entries of the original object did not fit.
+         */
+        val overflow: Boolean? = null,
+
+        /**
+         * List of the properties.
+         */
+        val properties: List<PropertyPreview>,
     )
 
     /**
@@ -717,8 +862,24 @@ class Debugger(private val requestEvaluator: CDPRequestEvaluator) {
         }
     }
 
+    /**
+     * Steps over the statement.
+     *
+     * See [Debugger.stepOver](https://chromedevtools.github.io/devtools-protocol/tot/Debugger/#method-stepOver)
+     */
+    suspend fun stepOver() {
+        requestEvaluator.evaluateRequest<CDPMethodInvocationResultUnit> { messageId ->
+            encodeCDPMethodCall<CDPMethodInvocationResultUnit, CDPRequestParamsUnit>(messageId, "Debugger.stepOver", null)
+        }
+    }
+
     @Serializable
-    private class EvaluateOnCallFrameRequestParams(val callFrameId: CallFrameId, val expression: String) : CDPRequestParams()
+    private class EvaluateOnCallFrameRequestParams(
+        val callFrameId: CallFrameId,
+        val expression: String,
+        val returnByValue: Boolean? = null,
+        val generatePreview: Boolean? = null
+    ) : CDPRequestParams()
 
     /**
      * Evaluates expression on a given call frame.
@@ -728,14 +889,18 @@ class Debugger(private val requestEvaluator: CDPRequestEvaluator) {
      * @param callFrameId Call frame identifier to evaluate on.
      * @param expression Expression to evaluate.
      */
-    suspend fun evaluateOnCallFrame(callFrameId: CallFrameId, expression: String) =
-        requestEvaluator.evaluateRequest<Runtime.EvaluationResult> { messageId ->
-            encodeCDPMethodCall<Runtime.EvaluationResult, EvaluateOnCallFrameRequestParams>(
-                messageId,
-                "Debugger.evaluateOnCallFrame",
-                EvaluateOnCallFrameRequestParams(callFrameId, expression)
-            )
-        }
+    suspend fun evaluateOnCallFrame(
+        callFrameId: CallFrameId,
+        expression: String,
+        returnByValue: Boolean? = null,
+        generatePreview: Boolean? = null
+    ) = requestEvaluator.evaluateRequest<Runtime.EvaluationResult> { messageId ->
+        encodeCDPMethodCall<Runtime.EvaluationResult, EvaluateOnCallFrameRequestParams>(
+            messageId,
+            "Debugger.evaluateOnCallFrame",
+            EvaluateOnCallFrameRequestParams(callFrameId, expression, returnByValue, generatePreview)
+        )
+    }
 
     /**
      * Breakpoint identifier.
@@ -804,6 +969,11 @@ class Debugger(private val requestEvaluator: CDPRequestEvaluator) {
         val location: Location,
 
         /**
+         * Scope chain for this call frame.
+         */
+        val scopeChain: List<Scope>,
+
+        /**
          * `this` object for this call frame.
          */
         val `this`: Runtime.RemoteObject,
@@ -813,6 +983,66 @@ class Debugger(private val requestEvaluator: CDPRequestEvaluator) {
          */
         val returnValue: Runtime.RemoteObject? = null,
     )
+
+    @Serializable
+    class Scope private constructor(
+
+        /**
+         * Scope type.
+         */
+        val type: ScopeType,
+
+        /**
+         * Object representing the scope. For [ScopeType.GLOBAL] and [Scopetype.WITH] scopes it represents the actual object;
+         * for the rest of the scopes, it is artificial transient object enumerating scope variables as its properties.
+         */
+        val `object`: Runtime.RemoteObject,
+
+        val name: String? = null,
+
+        /**
+         * Location in the source code where scope starts
+         */
+        val startLocation: Location? = null,
+
+        /**
+         * Location in the source code where scope ends
+         */
+        val endLocation: Location? = null,
+    )
+
+    @Serializable
+    enum class ScopeType {
+        @SerialName("global")
+        GLOBAL,
+
+        @SerialName("local")
+        LOCAL,
+
+        @SerialName("with")
+        WITH,
+
+        @SerialName("closure")
+        CLOSURE,
+
+        @SerialName("catch")
+        CATCH,
+
+        @SerialName("block")
+        BLOCK,
+
+        @SerialName("script")
+        SCRIPT,
+
+        @SerialName("eval")
+        EVAL,
+
+        @SerialName("module")
+        MODULE,
+
+        @SerialName("wasm-expression-stack")
+        WASM_EXPRESSION_STACK,
+    }
 
     @Serializable
     enum class PauseReason {
