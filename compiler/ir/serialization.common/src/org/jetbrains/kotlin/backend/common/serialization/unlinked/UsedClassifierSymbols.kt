@@ -10,29 +10,29 @@ import gnu.trove.THashSet
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrClassifierSymbol
 
-internal sealed interface UsedClassifierSymbolStatus2 {
+internal sealed interface UsedClassifierSymbolStatus {
     val isUnlinked: Boolean
 
     /** IR symbol of unlinked classifier. */
     // TODO: add reasons
-    class Unlinked : UsedClassifierSymbolStatus2 {
+    class Unlinked : UsedClassifierSymbolStatus {
         override val isUnlinked get() = true
         var isPatched = false // To avoid re-patching what already has been patched.
     }
 
     /** IR symbol of linked classifier. */
-    object Linked : UsedClassifierSymbolStatus2 {
+    object Linked : UsedClassifierSymbolStatus {
         override val isUnlinked get() = false
     }
 
     companion object {
-        val UsedClassifierSymbolStatus2?.isUnlinked: Boolean get() = this?.isUnlinked == true
+        val UsedClassifierSymbolStatus?.isUnlinked: Boolean get() = this?.isUnlinked == true
     }
 }
 
 internal class UsedClassifierSymbols {
     private val linkedSymbols = THashSet<IrClassifierSymbol>()
-    private val unlinkedSymbols = THashMap<IrClassifierSymbol, UsedClassifierSymbolStatus2.Unlinked>()
+    private val unlinkedSymbols = THashMap<IrClassifierSymbol, UsedClassifierSymbolStatus.Unlinked>()
 
     fun forEachClassSymbolToPatch(patchAction: (IrClassSymbol) -> Unit) {
         val commonSymbols = linkedSymbols union unlinkedSymbols.keys
@@ -49,11 +49,11 @@ internal class UsedClassifierSymbols {
         }
     }
 
-    operator fun get(symbol: IrClassifierSymbol): UsedClassifierSymbolStatus2? =
-        if (symbol in linkedSymbols) UsedClassifierSymbolStatus2.Linked else unlinkedSymbols[symbol]
+    operator fun get(symbol: IrClassifierSymbol): UsedClassifierSymbolStatus? =
+        if (symbol in linkedSymbols) UsedClassifierSymbolStatus.Linked else unlinkedSymbols[symbol]
 
     fun registerUnlinked(symbol: IrClassifierSymbol): Boolean {
-        unlinkedSymbols[symbol] = UsedClassifierSymbolStatus2.Unlinked()
+        unlinkedSymbols[symbol] = UsedClassifierSymbolStatus.Unlinked()
         return true
     }
 

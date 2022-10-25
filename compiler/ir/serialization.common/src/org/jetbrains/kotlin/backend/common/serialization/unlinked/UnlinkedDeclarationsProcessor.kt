@@ -8,7 +8,7 @@ package org.jetbrains.kotlin.backend.common.serialization.unlinked
 import org.jetbrains.kotlin.backend.common.serialization.unlinked.UnlinkedDeclarationsProcessor.Companion.MISSING_ABSTRACT_CALLABLE_MEMBER_IMPLEMENTATION
 import org.jetbrains.kotlin.backend.common.serialization.unlinked.UnlinkedIrElementRenderer.appendDeclaration
 import org.jetbrains.kotlin.backend.common.serialization.unlinked.UnlinkedIrElementRenderer.renderError
-import org.jetbrains.kotlin.backend.common.serialization.unlinked.UsedClassifierSymbolStatus2.Companion.isUnlinked
+import org.jetbrains.kotlin.backend.common.serialization.unlinked.UsedClassifierSymbolStatus.Companion.isUnlinked
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.ir.*
 import org.jetbrains.kotlin.ir.declarations.*
