@@ -61,7 +61,7 @@ class SerializationFirResolveExtension(session: FirSession) : FirDeclarationGene
         with(session) {
             if (classSymbol.shouldHaveGeneratedMethodsInCompanion && !classSymbol.isSerializableObject)
                 result += SpecialNames.DEFAULT_NAME_FOR_COMPANION_OBJECT
-            if (classSymbol.shouldHaveGeneratedSerializer && !classSymbol.hasCompanionObjectAsSerializer)
+            if (classSymbol.shouldHaveGeneratedSerializer && !classSymbol.isInternallySerializableObject)
                 result += SerialEntityNames.SERIALIZER_CLASS_NAME
         }
 

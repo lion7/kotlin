@@ -174,11 +174,6 @@ internal fun FirClassSymbol<*>.isFinalOrOpen(): Boolean {
 
 context(FirSession)
 @Suppress("IncorrectFormatting") // KTIJ-22227
-val FirClassSymbol<*>.hasCompanionObjectAsSerializer: Boolean
-    get() = isInternallySerializableObject || hasExternalSerializerOnCompanion
-
-context(FirSession)
-@Suppress("IncorrectFormatting") // KTIJ-22227
 val FirClassSymbol<*>.hasExternalSerializerOnCompanion: Boolean
     // It was accepted that the annotation on the companion can take only the current class as an argument.
     get() = resolvedAnnotationsWithArguments.getAnnotationByClassId(SerializationAnnotations.serializerAnnotationClassId) != null
