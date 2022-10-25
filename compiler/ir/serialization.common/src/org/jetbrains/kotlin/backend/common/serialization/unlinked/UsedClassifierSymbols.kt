@@ -7,7 +7,6 @@ package org.jetbrains.kotlin.backend.common.serialization.unlinked
 
 import gnu.trove.THashMap
 import gnu.trove.THashSet
-import org.jetbrains.kotlin.backend.common.serialization.unlinked.UsedClassifierSymbolStatus.*
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrClassifierSymbol
 
@@ -29,14 +28,6 @@ internal sealed interface UsedClassifierSymbolStatus2 {
     companion object {
         val UsedClassifierSymbolStatus2?.isUnlinked: Boolean get() = this?.isUnlinked == true
     }
-}
-
-internal enum class UsedClassifierSymbolStatus(val isUnlinked: Boolean) {
-    /** IR symbol of unlinked classifier. */
-    UNLINKED(true),
-
-    /** IR symbol of linked classifier. */
-    LINKED(false);
 }
 
 internal class UsedClassifierSymbols {
@@ -61,31 +52,13 @@ internal class UsedClassifierSymbols {
     operator fun get(symbol: IrClassifierSymbol): UsedClassifierSymbolStatus2? =
         if (symbol in linkedSymbols) UsedClassifierSymbolStatus2.Linked else unlinkedSymbols[symbol]
 
-    fun register(symbol: IrClassifierSymbol, isUnlinked: Boolean): Boolean {
-        if (isUnlinked)
-            unlinkedSymbols[symbol] = UsedClassifierSymbolStatus2.Unlinked()
-        else
-            linkedSymbols += symbol
-        return isUnlinked
+    fun registerUnlinked(symbol: IrClassifierSymbol): Boolean {
+        unlinkedSymbols[symbol] = UsedClassifierSymbolStatus2.Unlinked()
+        return true
     }
 
-    fun register(symbol: IrClassifierSymbol, status: UsedClassifierSymbolStatus): Boolean {
-//        symbols.put(symbol, status.code)
-        return status.isUnlinked
-    }
-
-    companion object {
-        private inline val Byte.status: UsedClassifierSymbolStatus?
-            get() = when (this) {
-                1.toByte() -> UNLINKED
-                2.toByte() -> LINKED
-                else -> null
-            }
-
-        private inline val UsedClassifierSymbolStatus.code: Byte
-            get() = when (this) {
-                UNLINKED -> 1.toByte()
-                LINKED -> 2.toByte()
-            }
+    fun registerLinked(symbol: IrClassifierSymbol): Boolean {
+        linkedSymbols += symbol
+        return false
     }
 }

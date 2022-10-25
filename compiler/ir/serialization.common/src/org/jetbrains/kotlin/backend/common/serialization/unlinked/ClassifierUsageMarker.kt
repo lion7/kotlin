@@ -48,7 +48,7 @@ internal class ClassifierUsageMarker(private val usedClassifierSymbols: UsedClas
         }
 
         if (!isBound || (hasDescriptor && descriptor is NotFoundClasses.MockClassDescriptor))
-            return usedClassifierSymbols.register(this, UsedClassifierSymbolStatus.UNLINKED)
+            return usedClassifierSymbols.registerUnlinked(this)
 
         if (!visited.add(this))
             return false // Recursion avoidance.
@@ -58,24 +58,24 @@ internal class ClassifierUsageMarker(private val usedClassifierSymbols: UsedClas
                 if (classifier.isInner || classifier.isEnumEntry) {
                     val parentClass = classifier.parentClassOrNull
                     if (parentClass == null || parentClass.symbol.isUnlinkedClassifier(visited))
-                        return usedClassifierSymbols.register(this, UsedClassifierSymbolStatus.UNLINKED)
+                        return usedClassifierSymbols.registerUnlinked(this)
                 }
 
                 for (typeParameter in classifier.typeParameters) {
                     if (typeParameter.symbol.isUnlinkedClassifier(visited))
-                        return usedClassifierSymbols.register(this, UsedClassifierSymbolStatus.UNLINKED)
+                        return usedClassifierSymbols.registerUnlinked(this)
                 }
 
                 if (classifier.superTypes.any { it.isUnlinkedType(visited) })
-                    return usedClassifierSymbols.register(this, UsedClassifierSymbolStatus.UNLINKED)
+                    return usedClassifierSymbols.registerUnlinked(this)
             }
             is IrTypeParameter -> {
                 if (classifier.superTypes.any { it.isUnlinkedType(visited) })
-                    return usedClassifierSymbols.register(this, UsedClassifierSymbolStatus.UNLINKED)
+                    return usedClassifierSymbols.registerUnlinked(this)
             }
         }
 
-        return usedClassifierSymbols.register(this, UsedClassifierSymbolStatus.LINKED)
+        return usedClassifierSymbols.registerLinked(this)
     }
 
     override fun visitElement(element: IrElement) {
