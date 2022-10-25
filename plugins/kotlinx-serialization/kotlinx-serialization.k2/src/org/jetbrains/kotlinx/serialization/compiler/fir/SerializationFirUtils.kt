@@ -158,25 +158,11 @@ context(FirSession)
 internal val FirClassSymbol<*>.isSerializableEnum: Boolean
     get() = classKind.isEnumClass && hasSerializableOrMetaAnnotation
 
-/**
- * Check that class is enum and marked by `Serializable` annotation without serializer argument or meta-serializable annotation.
- */
-context(FirSession)
-@Suppress("IncorrectFormatting") // KTIJ-22227
-internal val FirClassSymbol<*>.isSerializableEnumWithoutArgs: Boolean
-    get() = classKind.isEnumClass && hasSerializableOrMetaAnnotationWithoutArgs
-
 internal fun FirClassSymbol<*>.isFinalOrOpen(): Boolean {
     val modality = rawStatus.modality
     // null means default modality, final
     return (modality == null || modality == Modality.FINAL || modality == Modality.OPEN)
 }
-
-context(FirSession)
-@Suppress("IncorrectFormatting") // KTIJ-22227
-val FirClassSymbol<*>.hasExternalSerializerOnCompanion: Boolean
-    // It was accepted that the annotation on the companion can take only the current class as an argument.
-    get() = resolvedAnnotationsWithArguments.getAnnotationByClassId(SerializationAnnotations.serializerAnnotationClassId) != null
 
 context(FirSession)
 val FirClassSymbol<*>.isEnumWithLegacyGeneratedSerializer: Boolean
@@ -185,12 +171,6 @@ val FirClassSymbol<*>.isEnumWithLegacyGeneratedSerializer: Boolean
 context(FirSession)
 val FirClassSymbol<*>.shouldHaveGeneratedSerializer: Boolean
     get() = (isInternalSerializable && isFinalOrOpen()) || isEnumWithLegacyGeneratedSerializer
-
-context(FirSession)
-@Suppress("IncorrectFormatting") // KTIJ-22227
-internal fun FirClassSymbol<*>.shouldHaveGeneratedSerializer(useGeneratedEnumSerializer: Boolean): Boolean {
-    return (isInternalSerializable && isFinalOrOpen()) || (useGeneratedEnumSerializer && isSerializableEnumWithoutArgs)
-}
 
 // ---------------------- type utils ----------------------
 
