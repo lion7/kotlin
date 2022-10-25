@@ -9,6 +9,7 @@
 # OWNER_LIST: "Kotlin Compiler Core"
 # OWNER_LIST: "Kotlin Build Infrastructure" "Kotlin Build Tools"
 # OWNER_LIST: "Kotlin IDE"
+# OWNER_LIST: "Kotlin Release"
 # OWNER_LIST: Mikhail.Glukhikh
 
 /.idea/ "Kotlin Build Infrastructure"
