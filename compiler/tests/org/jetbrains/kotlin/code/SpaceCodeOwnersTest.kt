@@ -16,31 +16,42 @@ class SpaceCodeOwnersTest : TestCase() {
     private val fileWalkDepthLimit = 8
 
     fun testOwnerListNoDuplicates() {
-        val entries = owners.filterIsInstance<OwnershipItem.OwnerListEntry>()
-        val set = mutableSetOf<String>()
-        for (entry in entries) {
-            if (!set.add(entry.name)) {
-                fail("Duplicated OWNER_LIST entry: $entry")
-            }
+        val duplicatedOwnerListEntries = owners.permittedOwners.groupBy { it.name }
+            .filterValues { occurrences -> occurrences.size > 1 }
+            .values
+
+        if (duplicatedOwnerListEntries.isNotEmpty()) {
+            fail(
+                buildString {
+                    appendLine("Duplicated OWNER_LIST entries in $ownersFile:")
+                    for (group in duplicatedOwnerListEntries) {
+                        group.joinTo(this, separator = "\n", postfix = "\n---")
+                    }
+                }
+            )
         }
     }
 
     fun testAllOwnersInOwnerList() {
-        val permittedOwners = owners
-            .filterIsInstance<OwnershipItem.OwnerListEntry>()
-            .map { it.name }
-            .toSet()
-        for (pattern in owners.filterIsInstance<OwnershipItem.Pattern>()) {
+        val permittedOwnerNames = owners.permittedOwners.map { it.name }.toSet()
+        val problems = mutableListOf<String>()
+        for (pattern in owners.patterns) {
+            if (pattern !is OwnershipPattern.Pattern) continue
             for (owner in pattern.owners) {
-                if (owner !in permittedOwners) {
-                    fail("Owner \"$owner\" not listed in OWNER_LIST, but used in $pattern")
+                if (owner !in permittedOwnerNames) {
+                    problems += "Owner ${owner.quoteIfContainsSpaces()} not listed in OWNER_LIST of $ownersFile, but used in $pattern"
                 }
             }
+        }
+        if (problems.isNotEmpty()) {
+            fail(problems.joinToString("\n"))
         }
     }
 
     fun testPatterns() {
-        data class ItemUse(val item: OwnershipItem, val rule: FastIgnoreRule, var uses: Int = 0) {
+        data class ItemUse(val item: OwnershipPattern, val rule: FastIgnoreRule) {
+
+            var uses: Int = 0
             fun countMatch(path: String, isDirectory: Boolean): Boolean {
                 if (!rule.isMatch(path, isDirectory)) return false
                 uses++
@@ -48,12 +59,8 @@ class SpaceCodeOwnersTest : TestCase() {
             }
         }
 
-        val matchers = owners.mapNotNull {
-            when (it) {
-                is OwnershipItem.OwnerListEntry -> return@mapNotNull null
-                is OwnershipItem.Pattern -> ItemUse(it, FastIgnoreRule(it.pattern))
-                is OwnershipItem.UnknownPathPattern -> ItemUse(it, FastIgnoreRule(it.pattern))
-            }
+        val matchers = owners.patterns.map {
+            ItemUse(it, FastIgnoreRule(it.pattern))
         }.reversed()
 
         val fileMatchers = matchers.filterNot { (_, rule) -> rule.dirOnly() }
@@ -73,8 +80,8 @@ class SpaceCodeOwnersTest : TestCase() {
 
         fun visitFile(file: File, parentOwned: Boolean) {
             val path = file.path
-            if (ignoreTracker.isIgnored(path, isDirectory = true)) return
-            if (isOwned(path, isDirectory = true)) return
+            if (ignoreTracker.isIgnored(path, isDirectory = false)) return
+            if (isOwned(path, isDirectory = false)) return
             if (parentOwned) return
             if (unmatchedFilesTop.size < 10) {
                 unmatchedFilesTop.add(file)
@@ -105,25 +112,38 @@ class SpaceCodeOwnersTest : TestCase() {
 
         visitDirectory(root, false, 0)
 
+        val problems = mutableListOf<String>()
+
         if (unmatchedFilesTop.isNotEmpty()) {
-            fail("Found files without owner: [${unmatchedFilesTop.joinToString()}], please add it to $ownersFile")
+            problems.add(
+                "Found files without owner, please add it to $ownersFile:\n" +
+                        unmatchedFilesTop.joinToString("\n") { "    $it" }
+            )
         }
 
         val unusedPatterns = matchers.filter { it.uses == 0 }
         if (unusedPatterns.isNotEmpty()) {
-            fail("Unused patterns in $ownersFile: ${unusedPatterns.joinToString { it.item.toString() }}")
+            problems.add(
+                "Found unused patterns in $ownersFile:\n" +
+                        unusedPatterns.joinToString("\n") { "    ${it.item}" }
+            )
+        }
+
+        if (problems.isNotEmpty()) {
+            fail(problems.joinToString("\n"))
         }
     }
 }
 
 
 private class GitIgnoreTracker {
-    val ignoreNodeStack = mutableListOf(
+    private val ignoreNodeStack = mutableListOf(
         IgnoreNode(listOf(FastIgnoreRule("/.git")))
     )
+    private val reversedIgnoreNodeStack = ignoreNodeStack.asReversed()
 
     fun isIgnored(path: String, isDirectory: Boolean): Boolean {
-        return ignoreNodeStack.asReversed().firstNotNullOfOrNull { ignoreNode -> ignoreNode.checkIgnored(path, isDirectory) } ?: false
+        return reversedIgnoreNodeStack.firstNotNullOfOrNull { ignoreNode -> ignoreNode.checkIgnored(path, isDirectory) } ?: false
     }
 
     inline fun withDirectory(directory: File, action: () -> Unit) {
@@ -143,16 +163,37 @@ private class GitIgnoreTracker {
     }
 }
 
-private sealed class OwnershipItem {
-    abstract val line: Int
-
-    data class Pattern(val pattern: String, val owners: List<String>, override val line: Int) : OwnershipItem()
-    data class UnknownPathPattern(val pattern: String, override val line: Int) : OwnershipItem()
-    data class OwnerListEntry(val name: String, override val line: Int) : OwnershipItem()
+private data class CodeOwners(
+    val permittedOwners: List<OwnerListEntry>,
+    val patterns: List<OwnershipPattern>
+) {
+    data class OwnerListEntry(val name: String, val line: Int) {
+        override fun toString(): String {
+            return "line $line |# $OWNER_LIST_DIRECTIVE: $name"
+        }
+    }
 }
 
+private sealed class OwnershipPattern {
+    abstract val line: Int
+    abstract val pattern: String
 
-private fun parseCodeOwners(file: File): List<OwnershipItem> {
+    data class Pattern(override val pattern: String, val owners: List<String>, override val line: Int) : OwnershipPattern() {
+        override fun toString(): String {
+            return "line $line |$pattern " + owners.joinToString(separator = " ") { it.quoteIfContainsSpaces() }
+        }
+    }
+
+    data class UnknownPathPattern(override val pattern: String, override val line: Int) : OwnershipPattern() {
+        override fun toString(): String {
+            return "line $line |# $UNKNOWN_DIRECTIVE: $pattern"
+        }
+    }
+}
+
+private fun String.quoteIfContainsSpaces() = if (contains(' ')) "\"$this\"" else this
+
+private fun parseCodeOwners(file: File): CodeOwners {
     fun parseDirective(line: String, directive: String): String? {
         val value = line.substringAfter("# $directive: ")
         if (value != line) return value
@@ -165,35 +206,42 @@ private fun parseCodeOwners(file: File): List<OwnershipItem> {
         return ownersPattern.findAll(ownerString).map { it.value.removeSurrounding("\"") }.toList()
     }
 
-    return file.useLines { lines ->
-        buildList {
-            val out = this
-            for ((index, line) in lines.withIndex()) {
-                val lineNumber = index + 1
-                if (line.startsWith("#")) {
-                    parseDirective(line, UNKNOWN_DIRECTIVE)?.let {
-                        out.add(OwnershipItem.UnknownPathPattern(it.trim(), lineNumber))
-                    }
-                    parseDirective(line, OWNER_LIST_DIRECTIVE)?.let {
-                        parseOwnerNames(it).mapTo(out) { owner ->
-                            OwnershipItem.OwnerListEntry(owner, lineNumber)
-                        }
-                    }
-                } else if (line.isNotBlank()) {
-                    // Note: Space CODEOWNERS grammar is ambiguous, as it is impossible to distinguish between file pattern with spaces
-                    // and team name, so we re-use similar logic
-                    // ex:
-                    // ```
-                    // /some/path/Read Me.md Owner
-                    // ```
-                    // In such pattern it is impossible to distinguish between file ".../Read Me.md" or file ".../Read" owned by "Me.md"
-                    // See SPACE-17772
-                    val (pattern, owners) = line.split(' ', limit = 2)
-                    out.add(OwnershipItem.Pattern(pattern, parseOwnerNames(owners), lineNumber))
+    val permittedOwners = mutableListOf<CodeOwners.OwnerListEntry>()
+    val patterns = mutableListOf<OwnershipPattern>()
+
+    file.useLines { lines ->
+
+        for ((index, line) in lines.withIndex()) {
+            val lineNumber = index + 1
+            if (line.startsWith("#")) {
+                val unknownDirective = parseDirective(line, UNKNOWN_DIRECTIVE)
+                if (unknownDirective != null) {
+                    patterns += OwnershipPattern.UnknownPathPattern(unknownDirective.trim(), lineNumber)
+                    continue
                 }
+
+                val ownerListDirective = parseDirective(line, OWNER_LIST_DIRECTIVE)
+                if (ownerListDirective != null) {
+                    parseOwnerNames(ownerListDirective).mapTo(permittedOwners) { owner ->
+                        CodeOwners.OwnerListEntry(owner, lineNumber)
+                    }
+                }
+            } else if (line.isNotBlank()) {
+                // Note: Space CODEOWNERS grammar is ambiguous, as it is impossible to distinguish between file pattern with spaces
+                // and team name, so we re-use similar logic
+                // ex:
+                // ```
+                // /some/path/Read Me.md Owner
+                // ```
+                // In such pattern it is impossible to distinguish between file ".../Read Me.md" or file ".../Read" owned by "Me.md"
+                // See SPACE-17772
+                val (pattern, owners) = line.split(' ', limit = 2)
+                patterns += OwnershipPattern.Pattern(pattern, parseOwnerNames(owners), lineNumber)
             }
         }
     }
+
+    return CodeOwners(permittedOwners, patterns)
 }
 
 private const val OWNER_LIST_DIRECTIVE = "OWNER_LIST"
