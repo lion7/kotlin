@@ -3440,6 +3440,12 @@ standaloneTest("stress_gc_allocations") {
     flags = ['-tr', '-opt-in=kotlin.native.internal.InternalForKotlinNative']
 }
 
+standaloneTest("array_out_of_memory") {
+    enabled = (project.testTarget != "wasm32") // Needs exceptions on 32-bit platforms.
+    source = "runtime/memory/array_out_of_memory.kt"
+    flags = ['-tr']
+}
+
 standaloneTest("mpp1") {
     source = "codegen/mpp/mpp1.kt"
     flags = ['-tr', '-Xmulti-platform']

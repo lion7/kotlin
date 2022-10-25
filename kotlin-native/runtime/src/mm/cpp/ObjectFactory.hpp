@@ -19,6 +19,7 @@
 #include "Porting.h"
 #include "Types.h"
 #include "Utils.hpp"
+#include "std_support/Optional.hpp"
 
 namespace kotlin {
 namespace mm {
@@ -530,22 +531,29 @@ public:
 
         static size_t ArrayAllocatedSize(const TypeInfo* typeInfo, uint32_t count) noexcept {
             RuntimeAssert(typeInfo->IsArray(), "Must be an array");
-            size_t allocSize = ArrayAllocatedDataSize(typeInfo, count);
+            // Only used for already allocated arrays.
+            size_t allocSize = *ArrayAllocatedDataSize(typeInfo, count);
             return Storage::Node::GetSizeForDataSize(allocSize);
         }
 
         ArrayHeader* CreateArray(const TypeInfo* typeInfo, uint32_t count) {
             RuntimeAssert(typeInfo->IsArray(), "Must be an array");
-            size_t allocSize = ArrayAllocatedDataSize(typeInfo, count);
-            // On 32-bit systems, overflow can happen in several places along
-            // the size calculation. If overflow did not happen in the
-            // multiplication checked in the previous call, but any of the
-            // subsequent additions overflowed, then the overflowed value will
-            // be small compared to the number of entries in the array.
-            if (Storage::Node::GetSizeForDataSize(allocSize) < count) {
+            auto allocSize = ArrayAllocatedDataSize(typeInfo, count);
+            if (allocSize == std::nullopt) {
                 ThrowOutOfMemoryError();
             }
-            auto& node = producer_.Insert(allocSize);
+            static_assert(sizeof(size_t) >= sizeof(uint32_t), "size_t is at least 4 bytes.");
+            if constexpr (sizeof(size_t) == sizeof(uint32_t)) {
+                // On 32-bit systems, overflow can happen in several places along
+                // the size calculation. If overflow did not happen in the
+                // multiplication checked in the previous call, but any of the
+                // subsequent additions overflowed, then the overflowed value will
+                // be small compared to the number of entries in the array.
+                if (Storage::Node::GetSizeForDataSize(*allocSize) < count) {
+                    ThrowOutOfMemoryError();
+                }
+            }
+            auto& node = producer_.Insert(*allocSize);
             auto* heapArray = new (node.Data()) HeapArrayHeader();
             auto* array = &heapArray->array;
             array->typeInfoOrMeta_ = const_cast<TypeInfo*>(typeInfo);
@@ -567,13 +575,22 @@ public:
             return AlignUp(sizeof(HeapObjHeader) + membersSize, kObjectAlignment);
         }
 
-        static size_t ArrayAllocatedDataSize(const TypeInfo* typeInfo, uint32_t count) noexcept {
-            size_t membersSize;
-            if (__builtin_mul_overflow(static_cast<size_t>(-typeInfo->instanceSize_), count, &membersSize)) {
-                ThrowOutOfMemoryError();
+        static std::optional<size_t> ArrayAllocatedDataSize(const TypeInfo* typeInfo, uint32_t count) noexcept {
+            size_t size;
+            if (__builtin_mul_overflow(static_cast<size_t>(-typeInfo->instanceSize_), count, &size)) {
+                return std::nullopt;
+            }
+            static_assert(sizeof(size_t) >= sizeof(uint32_t), "size_t is at least 4 bytes.");
+            if constexpr (sizeof(size_t) == sizeof(uint32_t)) {
+                if (__builtin_add_overflow(sizeof(HeapArrayHeader), size, &size)) {
+                    return std::nullopt;
+                }
+            } else {
+                // Cannot overflow on 64 bit.
+                size += sizeof(HeapArrayHeader);
             }
             // Note: array body is aligned, but for size computation it is enough to align the sum.
-            return AlignUp(sizeof(HeapArrayHeader) + membersSize, kObjectAlignment);
+            return AlignUp(size, kObjectAlignment);
         }
 
         typename Storage::Producer producer_;

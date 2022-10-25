@@ -32,6 +32,7 @@
 #endif
 
 #include "KAssert.h"
+#include "Alignment.hpp"
 #include "Atomic.h"
 #include "Cleaner.h"
 #include "CompilerConstants.hpp"
@@ -57,6 +58,7 @@
 #include "std_support/Deque.hpp"
 #include "std_support/List.hpp"
 #include "std_support/New.hpp"
+#include "std_support/Optional.hpp"
 #include "std_support/UnorderedMap.hpp"
 #include "std_support/UnorderedSet.hpp"
 #include "std_support/Vector.hpp"
@@ -92,7 +94,7 @@ ALWAYS_INLINE bool IsStrictMemoryModel() noexcept {
 
 inline constexpr ObjectPoolAllocator<char> objectAllocator;
 
-typedef uint32_t container_size_t;
+using container_size_t = size_t;
 
 // Granularity of arena container chunks.
 constexpr container_size_t kContainerAlignment = 1024;
@@ -962,24 +964,34 @@ inline ContainerHeader* clearRemoved(ContainerHeader* container) {
     reinterpret_cast<uintptr_t>(container) & ~static_cast<uintptr_t>(1));
 }
 
-inline container_size_t alignUp(container_size_t size, int alignment) {
-  return (size + alignment - 1) & ~(alignment - 1);
-}
-
 inline ContainerHeader* realShareableContainer(ContainerHeader* container) {
   RuntimeAssert(container->shareable(), "Only makes sense on shareable objects");
   return containerFor(reinterpret_cast<ObjHeader*>(container + 1));
 }
 
-inline uint32_t arrayObjectSize(const TypeInfo* typeInfo, uint32_t count) {
-  // Note: array body is aligned, but for size computation it is enough to align the sum.
+inline std::optional<container_size_t> arrayObjectSize(const TypeInfo* typeInfo, uint32_t count) {
   static_assert(kObjectAlignment % alignof(KLong) == 0, "");
   static_assert(kObjectAlignment % alignof(KDouble) == 0, "");
-  return alignUp(sizeof(ArrayHeader) - typeInfo->instanceSize_ * count, kObjectAlignment);
+  container_size_t size;
+  if (__builtin_mul_overflow(-typeInfo->instanceSize_, count, &size)) {
+    return std::nullopt;
+  }
+  static_assert(sizeof(size_t) >= sizeof(uint32_t), "size_t is at least 4 bytes.");
+  if constexpr (sizeof(size_t) == sizeof(uint32_t)) {
+    if (__builtin_add_overflow(sizeof(ArrayHeader), size, &size)) {
+      return std::nullopt;
+    }
+  } else {
+    // Cannot overflow on 64 bit.
+    size += sizeof(ArrayHeader);
+  }
+  // Note: array body is aligned, but for size computation it is enough to align the sum.
+  return kotlin::AlignUp(size, kObjectAlignment);
 }
 
-inline uint32_t arrayObjectSize(const ArrayHeader* obj) {
-  return arrayObjectSize(obj->type_info(), obj->count_);
+inline container_size_t arrayObjectSize(const ArrayHeader* obj) {
+  // Only used for already allocated arrays.
+  return *arrayObjectSize(obj->type_info(), obj->count_);
 }
 
 // TODO: shall we do padding for alignment?
@@ -990,7 +1002,7 @@ inline container_size_t objectSize(const ObjHeader* obj) {
       arrayObjectSize(obj->array())
       :
       type_info->instanceSize_);
-  return alignUp(size, kObjectAlignment);
+  return kotlin::AlignUp(size, kObjectAlignment);
 }
 
 template <typename func>
@@ -1079,7 +1091,7 @@ ContainerHeader* allocContainer(MemoryState* state, size_t size) {
     if (state != nullptr)
         state->allocSinceLastGc += size;
 #endif
-    result = new (allocateInObjectPool(alignUp(size, kObjectAlignment))) ContainerHeader();
+    result = new (allocateInObjectPool(kotlin::AlignUp(size, kObjectAlignment))) ContainerHeader();
     atomicAdd(&allocCount, 1);
   }
   if (state != nullptr) {
@@ -1780,11 +1792,11 @@ inline ArenaContainer* initedArena(ObjHeader** auxSlot) {
   return arena;
 }
 
-inline size_t containerSize(const ContainerHeader* container) {
-  size_t result = 0;
+inline container_size_t containerSize(const ContainerHeader* container) {
+  container_size_t result = 0;
   const ObjHeader* obj = reinterpret_cast<const ObjHeader*>(container + 1);
   for (uint32_t object = 0; object < container->objectCount(); object++) {
-    size_t size = objectSize(obj);
+    container_size_t size = objectSize(obj);
     result += size;
     obj = reinterpret_cast<ObjHeader*>(reinterpret_cast<uintptr_t>(obj) + size);
   }
@@ -3188,7 +3200,7 @@ void ObjHeader::destroyMetaObject(ObjHeader* object) {
 
 void ObjectContainer::Init(MemoryState* state, const TypeInfo* typeInfo) {
   RuntimeAssert(typeInfo->instanceSize_ >= 0, "Must be an object");
-  uint32_t allocSize = sizeof(ContainerHeader) + typeInfo->instanceSize_;
+  container_size_t allocSize = sizeof(ContainerHeader) + typeInfo->instanceSize_;
   header_ = allocContainer(state, allocSize);
   RuntimeCheck(header_ != nullptr, "Cannot alloc memory");
   // One object in this container, no need to set.
@@ -3201,8 +3213,22 @@ void ObjectContainer::Init(MemoryState* state, const TypeInfo* typeInfo) {
 
 void ArrayContainer::Init(MemoryState* state, const TypeInfo* typeInfo, uint32_t elements) {
   RuntimeAssert(typeInfo->instanceSize_ < 0, "Must be an array");
-  uint32_t allocSize =
-      sizeof(ContainerHeader) + arrayObjectSize(typeInfo, elements);
+  auto dataSize = arrayObjectSize(typeInfo, elements);
+  if (dataSize == std::nullopt) {
+      ThrowOutOfMemoryError();
+  }
+  container_size_t allocSize = sizeof(ContainerHeader) + *dataSize;
+  static_assert(sizeof(size_t) >= sizeof(uint32_t), "size_t is at least 4 bytes.");
+  if constexpr (sizeof(size_t) == sizeof(uint32_t)) {
+    // On 32-bit systems, overflow can happen in several places along
+    // the size calculation. If overflow did not happen in the
+    // multiplication checked in the previous call, but any of the
+    // subsequent additions overflowed, then the overflowed value will
+    // be small compared to the number of entries in the array.
+    if (allocSize < elements) {
+      ThrowOutOfMemoryError();
+    }
+  }
   header_ = allocContainer(state, allocSize);
   RuntimeCheck(header_ != nullptr, "Cannot alloc memory");
   // One object in this container, no need to set.
@@ -3211,7 +3237,7 @@ void ArrayContainer::Init(MemoryState* state, const TypeInfo* typeInfo, uint32_t
   // header->refCount_ is zero initialized by allocContainer().
   GetPlace()->count_ = elements;
   SetHeader(GetPlace()->obj(), typeInfo);
-  OBJECT_ALLOC_EVENT(memoryState, arrayObjectSize(typeInfo, elements), GetPlace()->obj())
+  OBJECT_ALLOC_EVENT(memoryState, *dataSize, GetPlace()->obj())
 }
 
 // TODO: store arena containers in some reuseable data structure, similar to
@@ -3239,7 +3265,7 @@ void ArenaContainer::Deinit() {
 
 bool ArenaContainer::allocContainer(container_size_t minSize) {
   auto size = minSize + sizeof(ContainerHeader) + sizeof(ContainerChunk);
-  size = alignUp(size, kContainerAlignment);
+  size = kotlin::AlignUp(size, kContainerAlignment);
   // TODO: keep simple cache of container chunks.
   ContainerChunk* result = new (allocateInObjectPool(size)) ContainerChunk();
   RuntimeCheck(result != nullptr, "Cannot alloc memory");
@@ -3254,7 +3280,7 @@ bool ArenaContainer::allocContainer(container_size_t minSize) {
 }
 
 void* ArenaContainer::place(container_size_t size) {
-  size = alignUp(size, kObjectAlignment);
+  size = kotlin::AlignUp(size, kObjectAlignment);
   // Fast path.
   if (current_ + size < end_) {
     void* result = current_;
@@ -3282,7 +3308,7 @@ ObjHeader** ArenaContainer::getSlot() {
 
 ObjHeader* ArenaContainer::PlaceObject(const TypeInfo* type_info) {
   RuntimeAssert(type_info->instanceSize_ >= 0, "must be an object");
-  uint32_t size = type_info->instanceSize_;
+  container_size_t size = type_info->instanceSize_;
   ObjHeader* result = reinterpret_cast<ObjHeader*>(place(size));
   if (!result) {
     return nullptr;
@@ -3293,14 +3319,17 @@ ObjHeader* ArenaContainer::PlaceObject(const TypeInfo* type_info) {
   return result;
 }
 
-ArrayHeader* ArenaContainer::PlaceArray(const TypeInfo* type_info, uint32_t count) {
+ArrayHeader* ArenaContainer::PlaceArray(const TypeInfo* type_info, container_size_t count) {
   RuntimeAssert(type_info->instanceSize_ < 0, "must be an array");
-  container_size_t size = arrayObjectSize(type_info, count);
-  ArrayHeader* result = reinterpret_cast<ArrayHeader*>(place(size));
+  auto size = arrayObjectSize(type_info, count);
+  if (size == std::nullopt) {
+      ThrowOutOfMemoryError();
+  }
+  ArrayHeader* result = reinterpret_cast<ArrayHeader*>(place(*size));
   if (!result) {
     return nullptr;
   }
-  OBJECT_ALLOC_EVENT(memoryState, arrayObjectSize(type_info, count), result->obj())
+  OBJECT_ALLOC_EVENT(memoryState, size, result->obj())
   currentChunk_->asHeader()->incObjectCount();
   setHeader(result->obj(), type_info);
   result->count_ = count;
