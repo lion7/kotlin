@@ -41,7 +41,7 @@ internal class ClassifierUsageMarker(private val usedClassifierSymbols: UsedClas
 
     fun IrClassifierSymbol.isUnlinkedClassifier(visited: MutableSet<IrClassifierSymbol>): Boolean {
         when (val status = usedClassifierSymbols[this]) {
-            UsedClassifierSymbolStatus.UNLINKED, UsedClassifierSymbolStatus.LINKED -> return status.isUnlinked
+            is UsedClassifierSymbolStatus2 -> return status.isUnlinked
             null -> {
                 // Unknown classifier. Continue.
             }

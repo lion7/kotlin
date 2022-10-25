@@ -5,11 +5,31 @@
 
 package org.jetbrains.kotlin.backend.common.serialization.unlinked
 
+import gnu.trove.THashMap
 import gnu.trove.THashSet
-import gnu.trove.TObjectByteHashMap
 import org.jetbrains.kotlin.backend.common.serialization.unlinked.UsedClassifierSymbolStatus.*
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrClassifierSymbol
+
+internal sealed interface UsedClassifierSymbolStatus2 {
+    val isUnlinked: Boolean
+
+    /** IR symbol of unlinked classifier. */
+    // TODO: add reasons
+    class Unlinked : UsedClassifierSymbolStatus2 {
+        override val isUnlinked get() = true
+        var isPatched = false // To avoid re-patching what already has been patched.
+    }
+
+    /** IR symbol of linked classifier. */
+    object Linked : UsedClassifierSymbolStatus2 {
+        override val isUnlinked get() = false
+    }
+
+    companion object {
+        val UsedClassifierSymbolStatus2?.isUnlinked: Boolean get() = this?.isUnlinked == true
+    }
+}
 
 internal enum class UsedClassifierSymbolStatus(val isUnlinked: Boolean) {
     /** IR symbol of unlinked classifier. */
@@ -17,29 +37,40 @@ internal enum class UsedClassifierSymbolStatus(val isUnlinked: Boolean) {
 
     /** IR symbol of linked classifier. */
     LINKED(false);
-
-    companion object {
-        val UsedClassifierSymbolStatus?.isUnlinked: Boolean get() = this?.isUnlinked == true
-    }
 }
 
 internal class UsedClassifierSymbols {
-    private val symbols = TObjectByteHashMap<IrClassifierSymbol>()
-    private val patchedSymbols = THashSet<IrClassSymbol>() // To avoid re-patching what already has been patched.
+    private val linkedSymbols = THashSet<IrClassifierSymbol>()
+    private val unlinkedSymbols = THashMap<IrClassifierSymbol, UsedClassifierSymbolStatus2.Unlinked>()
 
     fun forEachClassSymbolToPatch(patchAction: (IrClassSymbol) -> Unit) {
-        symbols.forEachEntry { symbol, code ->
-            if (symbol.isBound && code.status == UNLINKED && symbol is IrClassSymbol && patchedSymbols.add(symbol)) {
-                patchAction(symbol)
+        val commonSymbols = linkedSymbols union unlinkedSymbols.keys
+        assert(commonSymbols.isEmpty()) {
+            "There are classifier symbols that are registered as linked and unlinked simultaneously: " + commonSymbols.joinToString()
+        }
+
+        unlinkedSymbols.forEachEntry { symbol, status ->
+            if (!status.isPatched) {
+                status.isPatched = true
+                if (symbol.isBound && symbol is IrClassSymbol) patchAction(symbol)
             }
             true
         }
     }
 
-    operator fun get(symbol: IrClassifierSymbol): UsedClassifierSymbolStatus? = symbols[symbol].status
+    operator fun get(symbol: IrClassifierSymbol): UsedClassifierSymbolStatus2? =
+        if (symbol in linkedSymbols) UsedClassifierSymbolStatus2.Linked else unlinkedSymbols[symbol]
+
+    fun register(symbol: IrClassifierSymbol, isUnlinked: Boolean): Boolean {
+        if (isUnlinked)
+            unlinkedSymbols[symbol] = UsedClassifierSymbolStatus2.Unlinked()
+        else
+            linkedSymbols += symbol
+        return isUnlinked
+    }
 
     fun register(symbol: IrClassifierSymbol, status: UsedClassifierSymbolStatus): Boolean {
-        symbols.put(symbol, status.code)
+//        symbols.put(symbol, status.code)
         return status.isUnlinked
     }
 
