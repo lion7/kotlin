@@ -88,6 +88,8 @@ public:
         Node() noexcept = default;
 
         static unique_ptr<Node> Create(Allocator& allocator, size_t dataSize) noexcept {
+            static_assert(GetSizeForDataSize(0) < kObjectAlignment, "Make sure calculating allocated size cannot overflow");
+            RuntimeAssert(IsAligned(dataSize, kObjectAlignment), "Unaligned dataSize=%zu", dataSize);
             auto totalSize = GetSizeForDataSize(dataSize);
             RuntimeAssert(
                     DataOffset() + dataSize <= totalSize, "totalSize %zu is not enough to fit data %zu at offset %zu", totalSize, dataSize,
@@ -541,17 +543,6 @@ public:
             auto allocSize = ArrayAllocatedDataSize(typeInfo, count);
             if (allocSize == std::nullopt) {
                 ThrowOutOfMemoryError();
-            }
-            static_assert(sizeof(size_t) >= sizeof(uint32_t), "size_t is at least 4 bytes.");
-            if constexpr (sizeof(size_t) == sizeof(uint32_t)) {
-                // On 32-bit systems, overflow can happen in several places along
-                // the size calculation. If overflow did not happen in the
-                // multiplication checked in the previous call, but any of the
-                // subsequent additions overflowed, then the overflowed value will
-                // be small compared to the number of entries in the array.
-                if (Storage::Node::GetSizeForDataSize(*allocSize) < count) {
-                    ThrowOutOfMemoryError();
-                }
             }
             auto& node = producer_.Insert(*allocSize);
             auto* heapArray = new (node.Data()) HeapArrayHeader();

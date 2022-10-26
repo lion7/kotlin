@@ -3217,18 +3217,9 @@ void ArrayContainer::Init(MemoryState* state, const TypeInfo* typeInfo, uint32_t
   if (dataSize == std::nullopt) {
       ThrowOutOfMemoryError();
   }
+  static_assert(sizeof(ContainerHeader) <= kObjectAlignment, "Make sure calculating allocSize cannot overflow");
+  RuntimeAssert(kotlin::IsAligned(*dataSize, kObjectAlignment), "Unaligned dataSize=%zu", *dataSize);
   container_size_t allocSize = sizeof(ContainerHeader) + *dataSize;
-  static_assert(sizeof(size_t) >= sizeof(uint32_t), "size_t is at least 4 bytes.");
-  if constexpr (sizeof(size_t) == sizeof(uint32_t)) {
-    // On 32-bit systems, overflow can happen in several places along
-    // the size calculation. If overflow did not happen in the
-    // multiplication checked in the previous call, but any of the
-    // subsequent additions overflowed, then the overflowed value will
-    // be small compared to the number of entries in the array.
-    if (allocSize < elements) {
-      ThrowOutOfMemoryError();
-    }
-  }
   header_ = allocContainer(state, allocSize);
   RuntimeCheck(header_ != nullptr, "Cannot alloc memory");
   // One object in this container, no need to set.
