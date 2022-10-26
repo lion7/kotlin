@@ -68,8 +68,11 @@ class FirSignatureEnhancement(
 
     private val typeQualifierResolver = session.javaAnnotationTypeQualifierResolver
 
-    private val contextQualifiers: JavaTypeQualifiersByElementType? =
+    // This property is assumed to be initialized only after annotations for the class are initialized
+    // While in one of the cases FirSignatureEnhancement is created just one step before annotations resolution
+    private val contextQualifiers: JavaTypeQualifiersByElementType? by lazy(LazyThreadSafetyMode.NONE) {
         typeQualifierResolver.extractDefaultQualifiers(owner)
+    }
 
     private val enhancementsCache = session.enhancedSymbolStorage.cacheByOwner.getValue(owner.symbol, null)
 
