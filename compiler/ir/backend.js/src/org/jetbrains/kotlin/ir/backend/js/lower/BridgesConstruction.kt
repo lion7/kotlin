@@ -22,6 +22,7 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classifierOrNull
+import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.util.*
 
 /**
@@ -180,7 +181,15 @@ abstract class BridgesConstruction<T : JsCommonBackendContext>(val context: T) :
                 val toTake = valueParameters.size - if (call.isSuspend xor irFunction.isSuspend) 1 else 0
 
                 valueParameters.subList(0, toTake).mapIndexed { i, valueParameter ->
-                    call.putValueArgument(i, irCastIfNeeded(irGet(valueParameter), delegateTo.valueParameters[i].type))
+                    val type = delegateTo.valueParameters[i].type.let { type ->
+                        if (bridge.origin == IrDeclarationOrigin.FUNCTION_FOR_DEFAULT_PARAMETER && i == toTake - 1) {
+                            type.makeNullable()
+                        } else {
+                            type
+                        }
+                    }
+
+                    call.putValueArgument(i, irCastIfNeeded(irGet(valueParameter), type))
                 }
 
                 +irReturn(call)
