@@ -8,19 +8,20 @@ package org.jetbrains.kotlin.lombok.processor
 import org.jetbrains.kotlin.descriptors.ClassConstructorDescriptor
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.SimpleFunctionDescriptor
+import org.jetbrains.kotlin.load.java.lazy.descriptors.SyntheticJavaClassDescriptor
 
 class SyntheticParts(
     val methods: List<SimpleFunctionDescriptor> = emptyList(),
     val staticFunctions: List<SimpleFunctionDescriptor> = emptyList(),
     val constructors: List<ClassConstructorDescriptor> = emptyList(),
-    val classes: List<ClassDescriptor> = emptyList(),
+    val nestedClasses: List<SyntheticJavaClassDescriptor> = emptyList(),
 ) {
 
     operator fun plus(other: SyntheticParts): SyntheticParts = SyntheticParts(
         methods + other.methods,
         staticFunctions + other.staticFunctions,
         constructors + other.constructors,
-        classes + other.classes
+        nestedClasses + other.nestedClasses
     )
 
     companion object {
