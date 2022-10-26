@@ -130,9 +130,7 @@ object FirFakeOverrideGenerator {
             ).filterIsInstance<FirTypeParameter>()
             deprecationsProvider = baseFunction.deprecationsProvider
         }.apply {
-            if (derivedClass != null) {
-                containingClassForStaticMemberAttr = derivedClass
-            }
+            containingClassForStaticMemberAttr = derivedClass
         }
     }
 
@@ -179,9 +177,7 @@ object FirFakeOverrideGenerator {
             deprecationsProvider = baseConstructor.deprecationsProvider
         }.apply {
             originalForSubstitutionOverrideAttr = baseConstructor
-            if (derivedClass != null) {
-                containingClassForStaticMemberAttr = derivedClass
-            }
+            containingClassForStaticMemberAttr = derivedClass
         }
     }
 
@@ -363,9 +359,7 @@ object FirFakeOverrideGenerator {
             )
             deprecationsProvider = baseProperty.deprecationsProvider
         }.apply {
-            if (derivedClass != null) {
-                containingClassForStaticMemberAttr = derivedClass
-            }
+            containingClassForStaticMemberAttr = derivedClass
         }
     }
 
