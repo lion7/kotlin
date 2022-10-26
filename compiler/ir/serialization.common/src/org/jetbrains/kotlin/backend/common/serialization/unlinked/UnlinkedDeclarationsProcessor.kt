@@ -8,7 +8,7 @@ package org.jetbrains.kotlin.backend.common.serialization.unlinked
 import org.jetbrains.kotlin.backend.common.serialization.unlinked.UnlinkedDeclarationsProcessor.Companion.MISSING_ABSTRACT_CALLABLE_MEMBER_IMPLEMENTATION
 import org.jetbrains.kotlin.backend.common.serialization.unlinked.UnlinkedIrElementRenderer.appendDeclaration
 import org.jetbrains.kotlin.backend.common.serialization.unlinked.UnlinkedIrElementRenderer.renderError
-import org.jetbrains.kotlin.backend.common.serialization.unlinked.UsedClassifierSymbolStatus.Companion.isUnlinked
+import org.jetbrains.kotlin.backend.common.serialization.unlinked.LinkedClassifierSymbolStatus.Companion.isPartiallyLinked
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.ir.*
 import org.jetbrains.kotlin.ir.declarations.*
@@ -30,12 +30,12 @@ import org.jetbrains.kotlin.utils.addIfNotNull
 
 internal class UnlinkedDeclarationsProcessor(
     private val builtIns: IrBuiltIns,
-    private val usedClassifierSymbols: UsedClassifierSymbols,
+    private val linkedClassifierSymbols: LinkedClassifierSymbols,
     private val unlinkedMarkerTypeHandler: UnlinkedMarkerTypeHandler,
     private val messageLogger: IrMessageLogger
 ) {
     fun addLinkageErrorIntoUnlinkedClasses() {
-        usedClassifierSymbols.forEachClassSymbolToPatch { unlinkedSymbol ->
+        linkedClassifierSymbols.forEachClassSymbolToPatch { unlinkedSymbol ->
             val clazz = unlinkedSymbol.owner
 
             val anonInitializer = clazz.declarations.firstNotNullOfOrNull { it as? IrAnonymousInitializer }
@@ -262,7 +262,7 @@ internal class UnlinkedDeclarationsProcessor(
         return false
     }
 
-    private fun IrClassifierSymbol.isUnlinked(): Boolean = !isBound || usedClassifierSymbols[this].isUnlinked
+    private fun IrClassifierSymbol.isUnlinked(): Boolean = !isBound || linkedClassifierSymbols[this].isPartiallyLinked
 
     private fun IrType.isUnlinked(): Boolean {
         val simpleType = this as? IrSimpleType ?: return false

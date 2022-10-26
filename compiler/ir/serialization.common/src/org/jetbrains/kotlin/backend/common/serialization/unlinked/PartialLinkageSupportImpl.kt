@@ -16,14 +16,14 @@ internal class PartialLinkageSupportImpl(
     builtIns: IrBuiltIns,
     messageLogger: IrMessageLogger
 ) : PartialLinkageSupport {
-    private val usedClassifierSymbols = UsedClassifierSymbols()
-    private val classifierUsageMarker = ClassifierUsageMarker(usedClassifierSymbols)
+    private val linkedClassifierSymbols = LinkedClassifierSymbols()
+    private val classifierUsageMarker = ClassifierUsageMarker(linkedClassifierSymbols)
 
     // Keep this handler here for the whole duration of IR linker life cycle. This is necessary to have
     // stable reference equality (===) for the marker IR type.
     private val unlinkedMarkerTypeHandler = UnlinkedMarkerTypeHandlerImpl(builtIns)
     private val unlinkedDeclarationsProcessor =
-        UnlinkedDeclarationsProcessor(builtIns, usedClassifierSymbols, unlinkedMarkerTypeHandler, messageLogger)
+        UnlinkedDeclarationsProcessor(builtIns, linkedClassifierSymbols, unlinkedMarkerTypeHandler, messageLogger)
 
     override val partialLinkageEnabled get() = true
 
@@ -34,7 +34,7 @@ internal class PartialLinkageSupportImpl(
 
             val toExclude = buildSet {
                 for (clazz in entries.keys) {
-                    if (clazz.symbol.isUnlinkedClassifier(visited = hashSetOf())) {
+                    if (clazz.symbol.isPartiallyLinkedClassifier()) {
                         this += clazz
                     }
                 }
