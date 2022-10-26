@@ -24,9 +24,9 @@ import kotlin.io.path.*
 import kotlin.test.assertTrue
 
 /**
- * Create new test project.
+ * Create a new test project.
  *
- * @param [projectName] test project name in 'src/test/resources/testProject` directory.
+ * @param [projectName] test project name in `src/test/resources/testProject` directory.
  * @param [buildOptions] common Gradle build options
  * @param [buildJdk] path to JDK build should run with. *Note* Only append to 'gradle.properties'!
  */
@@ -83,7 +83,7 @@ fun KGPBaseTest.project(
 }
 
 /**
- * Create new test project with configuring single native target.
+ * Create a new test project with configuring single native target.
  *
  * @param [projectName] test project name in 'src/test/resources/testProject` directory.
  * @param [buildOptions] common Gradle build options
@@ -610,3 +610,22 @@ private fun TestProject.configureLocalRepository(localRepoDir: Path) {
 }
 
 internal fun TestProject.disableKotlinNativeCaches() = gradleProperties.toFile().disableKotlinNativeCaches()
+
+/**
+ * Embeds a project from [otherProjectResourcesPath] as a subproject of this project
+ *
+ * @param otherProjectResourcesPath a path string relative to the test projects resources directory
+ */
+internal fun TestProject.embedProject(otherProjectResourcesPath: String) {
+    val otherProjectPath = otherProjectResourcesPath.testProjectPath
+    val otherProjectName = otherProjectPath.fileName
+    otherProjectPath.copyRecursively(projectPath.resolve(otherProjectName))
+    val settingsFile = if (settingsGradle.exists()) settingsGradle else settingsGradleKts
+    settingsFile.appendText(
+        //language=Gradle
+        """
+            
+            include("$otherProjectName")
+        """.trimIndent()
+    )
+}

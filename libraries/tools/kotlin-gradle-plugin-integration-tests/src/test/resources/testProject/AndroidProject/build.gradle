@@ -1,3 +1,14 @@
+buildscript {
+    configurations.all {
+        resolutionStrategy.eachDependency {
+            if (requested.group == "com.google.guava" && requested.name == "guava") {
+                useVersion('30.1-jre')
+                because('Lint doesn\'t close files properly with an older versions')
+            }
+        }
+    }
+}
+
 plugins {
     // Ensure non-separated kotlin and android classpath for all projects
     id 'org.jetbrains.kotlin.multiplatform' apply false
