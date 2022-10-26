@@ -32,7 +32,7 @@ internal class PartialLinkageSupportImpl(
             val entries = fakeOverrideBuilder.fakeOverrideCandidates
             if (entries.isEmpty()) return
 
-            val toRemove = buildSet {
+            val toExclude = buildSet {
                 for (clazz in entries.keys) {
                     if (clazz.symbol.isUnlinkedClassifier(visited = hashSetOf())) {
                         this += clazz
@@ -40,7 +40,7 @@ internal class PartialLinkageSupportImpl(
                 }
             }
 
-            entries -= toRemove
+            entries -= toExclude
         }
 
     override fun markUsedClassifiersInInlineLazyIrFunction(function: IrFunction) {
