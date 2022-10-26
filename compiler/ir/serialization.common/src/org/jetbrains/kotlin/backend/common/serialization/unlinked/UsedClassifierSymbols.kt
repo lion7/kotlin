@@ -35,12 +35,11 @@ internal class UsedClassifierSymbols {
     private val unlinkedSymbols = THashMap<IrClassifierSymbol, UsedClassifierSymbolStatus.Unlinked>()
 
     fun forEachClassSymbolToPatch(patchAction: (IrClassSymbol) -> Unit) {
-        val commonSymbols = linkedSymbols intersect unlinkedSymbols.keys
-        assert(commonSymbols.isEmpty()) {
-            "There are classifier symbols that are registered as linked and unlinked simultaneously: " + commonSymbols.joinToString()
-        }
-
         unlinkedSymbols.forEachEntry { symbol, status ->
+            assert(symbol !in linkedSymbols) {
+                "Encountered a classifier symbol that is registered as both linked and unlinked: $symbol"
+            }
+
             if (!status.isPatched) {
                 status.isPatched = true
                 if (symbol.isBound && symbol is IrClassSymbol) patchAction(symbol)
