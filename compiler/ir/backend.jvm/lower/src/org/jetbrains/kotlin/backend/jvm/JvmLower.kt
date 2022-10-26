@@ -309,8 +309,7 @@ private val jvmFilePhases = listOf(
     forLoopsPhase,
     collectionStubMethodLowering,
     singleAbstractMethodPhase,
-    jvmMultiFieldValueClassPhase,
-    jvmInlineClassPhase,
+    jvmValueClassPhase,
     tailrecPhase,
     // makePatchParentsPhase(),
 
