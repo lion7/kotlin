@@ -569,7 +569,10 @@ interface ConeTypeContext : TypeSystemContext, TypeSystemOptimizationContext, Ty
     }
 
     override fun TypeConstructorMarker.getValueClassProperties(): List<Pair<Name, SimpleTypeMarker>>? {
-        return toFirRegularClass()?.valueClassRepresentation?.underlyingPropertyNamesToTypes
+        val firClass = toFirRegularClass() ?: return null
+        // NB: [FirRegularClass.valueClassRepresentation] is updated by [FirStatusResolveTransformer].
+        firClass.symbol.lazyResolveToPhase(FirResolvePhase.STATUS)
+        return firClass.valueClassRepresentation?.underlyingPropertyNamesToTypes
     }
 
     override fun TypeConstructorMarker.isInnerClass(): Boolean {
