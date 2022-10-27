@@ -31,7 +31,7 @@ import org.jetbrains.kotlin.test.util.DescriptorValidator.ValidationVisitor
 class DeserializedScopeValidationVisitor : ValidationVisitor() {
     override fun validateScope(scopeOwner: DeclarationDescriptor, scope: MemberScope, collector: DescriptorValidator.DiagnosticCollector) {
         super.validateScope(scopeOwner, scope, collector)
-        validateDeserializedScope(scopeOwner, scope)
+//        validateDeserializedScope(scopeOwner, scope)
     }
 }
 
@@ -41,7 +41,7 @@ private fun validateDeserializedScope(scopeOwner: DeclarationDescriptor, scope: 
         val relevantDescriptors = scope.getContributedDescriptors().filter { member ->
             member is CallableMemberDescriptor && member.kind.isReal || (!isPackageViewScope && member is ClassDescriptor)
         }
-        checkSorted(relevantDescriptors, scopeOwner)
+//        checkSorted(relevantDescriptors, scopeOwner)
     }
 }
 
